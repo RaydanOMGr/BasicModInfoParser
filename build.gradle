@@ -19,6 +19,12 @@ dependencies {
     implementation 'org.tomlj:tomlj:1.1.1'
 }
 
+jar {
+    from('LICENSE') {
+        into('')
+    }
+}
+
 test {
     useJUnitPlatform()
 }
