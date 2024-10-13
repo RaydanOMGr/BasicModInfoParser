@@ -1,4 +1,6 @@
-package me.andreasmelone.basicmodinfoparser;
+package me.andreasmelone.basicmodinfoparser.standalone;
+
+import me.andreasmelone.basicmodinfoparser.Platform;
 
 import java.io.File;
 import java.io.IOException;

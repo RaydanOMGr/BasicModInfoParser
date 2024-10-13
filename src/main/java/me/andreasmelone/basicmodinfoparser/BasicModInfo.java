@@ -3,6 +3,8 @@ package me.andreasmelone.basicmodinfoparser;
 import java.util.Objects;
 
 public class BasicModInfo {
+    private static final BasicModInfo EMPTY = new BasicModInfo(null, null, null, null);
+
     private final String id;
     private final String name;
     private final String version;
@@ -52,5 +54,9 @@ public class BasicModInfo {
                 ", version='" + version + '\'' +
                 ", description='" + description + '\'' +
                 '}';
+    }
+
+    public static BasicModInfo empty() {
+        return EMPTY;
     }
 }

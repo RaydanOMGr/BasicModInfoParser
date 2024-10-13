@@ -1,19 +1,14 @@
 package me.andreasmelone.basicmodinfoparser;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
-import org.tomlj.Toml;
-import org.tomlj.TomlParseResult;
-import org.tomlj.TomlTable;
+import com.google.gson.*;
+import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
+import me.andreasmelone.basicmodinfoparser.util.ParserUtils;
+import org.tomlj.*;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -22,28 +17,31 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
+import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
+
 public enum Platform {
     /**
      * Legacy Forge platform, which uses the {@code mcmod.info} file containing JSON data.
      */
     FORGE_LEGACY((str) -> {
         Gson gson = new Gson();
-        JsonObject jsonObj = gson.fromJson(str, JsonArray.class).get(0).getAsJsonObject();
-        String modId = jsonObj.get("modid").getAsString();
-        String name = jsonObj.get("name").getAsString();
-        String description = jsonObj.get("description").getAsString();
-        String version = jsonObj.get("version").getAsString();
-
-        return new BasicModInfo(modId, name, version, description);
+        JsonArray topArray = gson.fromJson(str, JsonArray.class);
+        if (topArray == null || topArray.size() == 0 || !topArray.get(0).isJsonObject()) {
+            return BasicModInfo.empty();
+        }
+        return ParserUtils.createModInfoFromJsonObject(topArray.get(0).getAsJsonObject(),
+                "modid", "name", "version", "description");
     }, "mcmod.info"),
     /**
      * Forge platform, which uses the {@code mods.toml} file with TOML data.
      * It can also be used to parse NeoForge mods.
      */
-
     FORGE((str) -> {
         TomlParseResult result = Toml.parse(str);
-        TomlTable modInfo = result.getArray("mods").getTable(0);
+        TomlArray modsArray = result.getArray("mods");
+        if(modsArray == null || modsArray.isEmpty()) return BasicModInfo.empty();
+        TomlTable modInfo = modsArray.getTable(0);
+        if(modInfo.isEmpty()) return BasicModInfo.empty();
 
         String modId = modInfo.getString("modId");
         String name = modInfo.getString("displayName");
@@ -58,12 +56,9 @@ public enum Platform {
     FABRIC((str) -> {
         Gson gson = new Gson();
         JsonObject jsonObj = gson.fromJson(str, JsonObject.class);
-        String modId = jsonObj.get("id").getAsString();
-        String name = jsonObj.get("name").getAsString();
-        String description = jsonObj.get("description").getAsString();
-        String version = jsonObj.get("version").getAsString();
-
-        return new BasicModInfo(modId, name, version, description);
+        if(jsonObj == null) return BasicModInfo.empty();
+        return ParserUtils.createModInfoFromJsonObject(jsonObj,
+                "modId", "name", "version", "description");
     }, "fabric.mod.json");
 
     private final String[] infoFilePaths;
@@ -80,15 +75,24 @@ public enum Platform {
      * @param toParse The string to parse, expected to be in the format of the specific platform (JSON, TOML, etc.).
      *                This string must match the format required by the platform; otherwise, parsing will fail.
      * @return The {@link BasicModInfo} object containing mod information.
-     * @throws JsonSyntaxException If the string is invalid JSON (for platforms like FABRIC and FORGE_LEGACY).
-     * @throws IllegalStateException If the string does not match the expected TOML format (for FORGE).
+     * @throws IllegalArgumentException If the input string is null.
+     * @throws ModInfoParseException If an error occurs while parsing the TOML (for Forge) or JSON (for Legacy Forge and Fabric).
      */
     public BasicModInfo parse(String toParse) {
-        return parserFunction.apply(toParse);
+        if (toParse == null) {
+            throw new IllegalArgumentException("Input string cannot be null");
+        }
+
+        try {
+            return parserFunction.apply(toParse);
+        } catch (TomlParseError | TomlInvalidTypeException | JsonParseException e) {
+            throw new ModInfoParseException("Error parsing the mod info from the given string.", e);
+        }
     }
 
+
     /**
-     * Reads and returns the content of the platform-specific info file (e.g. `mcmod.info`, `mods.toml`, etc.) from a zip archive.
+     * Reads and returns the content of the platform-specific info file (e.g. {@code mcmod.info}, {@code mods.toml}, etc.) from a zip archive.
      *
      * @param zip The {@link ZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
      * @return The content of the info file as a string, or {@code null} if the info file was not found.
@@ -133,40 +137,5 @@ public enum Platform {
         }
 
         return platforms.toArray(new Platform[0]);
-    }
-
-    /**
-     * Compares an array of paths to a single path to check if any match after normalisation.<p>
-     * This ensures that two paths are considered equal, even if their string representations differ
-     * (e.g., {@code run/embeddium.jar} and {@code .\run\embeddium.jar}).
-     *
-     * @param paths An array of paths to compare.
-     * @param path2 The path to compare against.
-     * @return {@code true} if any of the provided paths are equal to {@code path2} after normalisation, otherwise {@code false}.
-     */
-    private static boolean comparePaths(String[] paths, String path2) {
-        for(String path : paths) {
-            Path normalizedPath1 = Paths.get(path).normalize();
-            Path normalizedPath2 = Paths.get(path2).normalize();
-            if(normalizedPath1.equals(normalizedPath2)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Reads the entire content of an {@link InputStream} and returns it as a string.
-     *
-     * @param in The {@link InputStream} to read from.
-     * @return The content of the InputStream as a string.
-     * @throws IOException If an I/O error occurs during reading.
-     */
-    private static String readEverythingAsString(InputStream in) throws IOException {
-        StringBuilder sb = new StringBuilder(in.available());
-        int readBytes;
-        byte[] buffer = new byte[1024];
-        while((readBytes = in.read(buffer)) > 0) {
-            sb.append(new String(buffer, 0, readBytes));
-        }
-        return sb.toString();
     }
 }
