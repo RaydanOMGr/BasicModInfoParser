@@ -21,17 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser.util;
+package me.andreasmelone.basicmodinfoparser.dependency.forge;
 
 /**
- * This exception indicates that parsing the mod info has failed
+ * When the dependency must be loaded. {@link Ordering#BEFORE} means it must be loaded before the mod, {@link Ordering#AFTER} means it must be loaded
+ * after the mod, {@link Ordering#NONE} means the order of loading does not matter.
  */
-public class ModInfoParseException extends RuntimeException {
-    public ModInfoParseException(String message, Exception parentException) {
-        super(message, parentException);
-    }
+public enum Ordering {
+    BEFORE,
+    AFTER,
+    NONE;
 
-    public ModInfoParseException(Exception parentException) {
-        super(parentException);
+    public static Ordering getFromString(String ordering) {
+        if (ordering.equalsIgnoreCase("before")
+                || ordering.equalsIgnoreCase("required-before")) {
+            return Ordering.BEFORE;
+        } else if(ordering.equalsIgnoreCase("after")
+                || ordering.equalsIgnoreCase("required-after")) {
+            return Ordering.AFTER;
+        }
+
+        return Ordering.NONE;
     }
 }

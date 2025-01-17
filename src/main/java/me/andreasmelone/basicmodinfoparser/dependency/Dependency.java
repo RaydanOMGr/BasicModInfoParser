@@ -21,17 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser.util;
+package me.andreasmelone.basicmodinfoparser.dependency;
 
-/**
- * This exception indicates that parsing the mod info has failed
- */
-public class ModInfoParseException extends RuntimeException {
-    public ModInfoParseException(String message, Exception parentException) {
-        super(message, parentException);
-    }
+public interface Dependency {
+    /**
+     * The ID of the dependency mod
+     * @return The id of the dependency mod
+     */
+    String getModId();
 
-    public ModInfoParseException(Exception parentException) {
-        super(parentException);
-    }
+    /**
+     * The required version, which is usually a <a href="https://maven.apache.org/enforcer/enforcer-rules/versionRanges.html">Maven Version Range</a> when working with forge, whereas
+     * fabric uses their own <a href="https://wiki.fabricmc.net/documentation:fabric_mod_json_spec#versionrange">format</a>.
+     * @return The version range, or null, if none is specified. None being specified usually means any version will do.
+     */
+    String getRequiredVersion();
+
+    /**
+     * Whether the dependency is required for the mod to run or not.
+     * @return whether the dependency is mandatory (needed to run the mod)
+     */
+    boolean isMandatory();
 }
