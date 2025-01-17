@@ -98,6 +98,7 @@ The `BasicModInfo` object stores the following details about a mod:
 - **name**: The name of the mod.
 - **version**: The version of the mod.
 - **description**: A brief description of the mod.
+- **dependencies**: The dependencies the mod requires or recommends to be installed to run correctly.
 
 ## License
 
