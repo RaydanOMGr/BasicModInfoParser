@@ -26,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.RaydanOMGr:BasicModInfoParser:1.0.1'
+    implementation 'com.github.RaydanOMGr:BasicModInfoParser:1.1.0'
 }
 ```
 
@@ -43,7 +43,7 @@ dependencies {
 <dependency>
     <groupId>com.github.RaydanOMGr</groupId>
     <artifactId>BasicModInfoParser</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
