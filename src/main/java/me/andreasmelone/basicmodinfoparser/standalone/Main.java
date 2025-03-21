@@ -23,6 +23,7 @@
  */
 package me.andreasmelone.basicmodinfoparser.standalone;
 
+import me.andreasmelone.basicmodinfoparser.BasicModInfo;
 import me.andreasmelone.basicmodinfoparser.Platform;
 
 import java.io.File;
@@ -47,7 +48,9 @@ public class Main {
                 for(Platform platform : platforms) {
                     String infoContent = platform.getInfoFileContent(jar);
                     System.out.print(file.getName() + ", " + platform + ": ");
-                    System.out.println(platform.parse(infoContent).toString());
+                    for (BasicModInfo modInfo : platform.parse(infoContent)) {
+                        System.out.println(modInfo.toString());
+                    }
                     System.out.println();
                 }
             } catch (IOException e) {

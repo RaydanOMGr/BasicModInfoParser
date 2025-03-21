@@ -126,4 +126,8 @@ public class BasicModInfo {
     public static BasicModInfo empty() {
         return EMPTY;
     }
+
+    public static BasicModInfo[] emptyArray() {
+        return new BasicModInfo[0];
+    }
 }

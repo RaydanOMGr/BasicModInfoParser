@@ -28,8 +28,19 @@ package me.andreasmelone.basicmodinfoparser.dependency.forge;
  * after the mod, {@link Ordering#NONE} means the order of loading does not matter.
  */
 public enum Ordering {
+    /**
+     * Dependency must be loaded before the mod
+     */
     BEFORE,
+
+    /**
+     * Dependency must be loaded after the mod
+     */
     AFTER,
+
+    /**
+     * Order loading of the dependency does not matter
+     */
     NONE;
 
     public static Ordering getFromString(String ordering) {

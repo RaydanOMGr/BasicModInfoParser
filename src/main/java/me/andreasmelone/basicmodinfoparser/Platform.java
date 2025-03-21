@@ -25,6 +25,7 @@ package me.andreasmelone.basicmodinfoparser;
 
 import com.google.gson.*;
 import me.andreasmelone.basicmodinfoparser.dependency.Dependency;
+import me.andreasmelone.basicmodinfoparser.dependency.StandardDependency;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.ParserUtils;
 import org.tomlj.*;
@@ -36,6 +37,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -48,32 +51,36 @@ public enum Platform {
      */
     FORGE_LEGACY("mcmod.info") {
         @Override
-        protected BasicModInfo parseFileData(String fileData) {
-            Gson gson = new Gson();
-            JsonArray topArray = gson.fromJson(fileData, JsonArray.class);
-            if (topArray == null || topArray.size() == 0 || !topArray.get(0).isJsonObject()) {
-                return BasicModInfo.empty();
+        protected BasicModInfo[] parseFileData(String fileData) {
+            JsonArray topArray = GSON.fromJson(fileData, JsonArray.class);
+            if (topArray == null || topArray.size() == 0) {
+                return BasicModInfo.emptyArray();
             }
 
-            JsonObject modObject = topArray.get(0).getAsJsonObject();
-            List<Dependency> dependencyList = new ArrayList<>();
-            if (modObject.has("dependencies") && modObject.get("dependencies").isJsonArray()) {
-                JsonArray dependenciesArray = modObject.getAsJsonArray("dependencies");
-                for (JsonElement element : dependenciesArray) {
-                    if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
-                        continue;
-                    }
-                    Dependency dependency = parseLegacyForgeDependency(element.getAsString());
-                    if (dependency != null) {
-                        dependencyList.add(dependency);
+            List<BasicModInfo> parsedInfos = new ArrayList<>();
+            for (JsonElement topArrayElement : topArray) {
+                if(!topArrayElement.isJsonObject()) continue;
+                JsonObject modObject = topArrayElement.getAsJsonObject();
+                List<Dependency> dependencyList = new ArrayList<>();
+                if (modObject.has("dependencies") && modObject.get("dependencies").isJsonArray()) {
+                    JsonArray dependenciesArray = modObject.getAsJsonArray("dependencies");
+                    for (JsonElement element : dependenciesArray) {
+                        if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
+                            continue;
+                        }
+                        Dependency dependency = parseLegacyForgeDependency(element.getAsString());
+                        if (dependency != null) {
+                            dependencyList.add(dependency);
+                        }
                     }
                 }
+                parsedInfos.add(ParserUtils.createModInfoFromJsonObject(modObject,
+                        "modid", "name", "version", "description",
+                        dependencyList.toArray(new Dependency[0])
+                ));
             }
 
-            return ParserUtils.createModInfoFromJsonObject(modObject,
-                    "modid", "name", "version", "description",
-                    dependencyList.toArray(new Dependency[0])
-            );
+            return parsedInfos.toArray(new BasicModInfo[0]);
         }
     },
     /**
@@ -82,34 +89,38 @@ public enum Platform {
      */
     FORGE("META-INF/mods.toml", "META-INF/neoforge.mods.toml") {
         @Override
-        protected BasicModInfo parseFileData(String fileData) {
+        protected BasicModInfo[] parseFileData(String fileData) {
             TomlParseResult result = Toml.parse(fileData);
             TomlArray modsArray = result.getArray("mods");
-            if(modsArray == null || modsArray.isEmpty()) return BasicModInfo.empty();
-            TomlTable modInfo = modsArray.getTable(0);
-            if(modInfo.isEmpty()) return BasicModInfo.empty();
+            if(modsArray == null || modsArray.isEmpty()) return BasicModInfo.emptyArray();
 
-            String modId = modInfo.getString("modId");
-            String name = modInfo.getString("displayName");
-            String description = modInfo.getString("description");
-            String version = modInfo.getString("version");
+            List<BasicModInfo> parsedInfos = new ArrayList<>();
+            for (int index = 0; index < modsArray.size(); index++) {
+                TomlTable modInfo = modsArray.getTable(index);
+                if(modInfo.isEmpty()) continue;
 
-            List<Dependency> dependencies = new ArrayList<>();
-            TomlArray dependenciesArray = result.getArray("dependencies." + modId);
+                String modId = modInfo.getString("modId");
+                String name = modInfo.getString("displayName");
+                String description = modInfo.getString("description");
+                String version = modInfo.getString("version");
 
-            if (dependenciesArray != null && !dependenciesArray.isEmpty()) {
-                for(int i = 0; i < dependenciesArray.size(); i++) {
-                    TomlTable dependencyTable = dependenciesArray.getTable(i);
-                    if (dependencyTable != null && !dependencyTable.isEmpty()) {
-                        dependencies.add(ParserUtils.parseForgeDependency(dependencyTable));
+                List<Dependency> dependencies = new ArrayList<>();
+                TomlArray dependenciesArray = result.getArray("dependencies." + modId);
+
+                if (dependenciesArray != null && !dependenciesArray.isEmpty()) {
+                    for(int i = 0; i < dependenciesArray.size(); i++) {
+                        TomlTable dependencyTable = dependenciesArray.getTable(i);
+                        if (dependencyTable != null && !dependencyTable.isEmpty()) {
+                            dependencies.add(ParserUtils.parseForgeDependency(dependencyTable));
+                        }
                     }
                 }
+                parsedInfos.add(new BasicModInfo(
+                        modId, name, version, description,
+                        dependencies.toArray(new Dependency[0])
+                ));
             }
-
-            return new BasicModInfo(
-                    modId, name, version, description,
-                    dependencies.toArray(new Dependency[0])
-            );
+            return parsedInfos.toArray(new BasicModInfo[0]);
         }
     },
     /**
@@ -117,19 +128,88 @@ public enum Platform {
      */
     FABRIC("fabric.mod.json") {
         @Override
-        protected BasicModInfo parseFileData(String fileData) {
-            Gson gson = new Gson();
-            JsonObject jsonObj = gson.fromJson(fileData, JsonObject.class);
-            if(jsonObj == null) return BasicModInfo.empty();
+        protected BasicModInfo[] parseFileData(String fileData) {
+            JsonElement root = GSON.fromJson(fileData, JsonElement.class);
+            if (root == null || (!root.isJsonArray() && !root.isJsonObject())) {
+                return BasicModInfo.emptyArray();
+            }
+            JsonArray jsonArray = root.isJsonArray() ? root.getAsJsonArray() : new JsonArray();
+            if (root.isJsonObject()) {
+                jsonArray.add(root.getAsJsonObject());
+            }
 
-            List<Dependency> dependencyList = new ArrayList<>();
-            ParserUtils.parseFabricDependencies(dependencyList, jsonObj, "depends", true);
-            ParserUtils.parseFabricDependencies(dependencyList, jsonObj, "recommends", false);
+            List<BasicModInfo> parsedInfos = new ArrayList<>();
+            for (JsonElement jsonArrayElement : jsonArray) {
+                if(!jsonArrayElement.isJsonObject()) continue;
+                JsonObject jsonObject = jsonArrayElement.getAsJsonObject();
 
-            return ParserUtils.createModInfoFromJsonObject(jsonObj,
-                    "id", "name", "version", "description",
-                    dependencyList.toArray(new Dependency[0])
-            );
+                List<Dependency> dependencyList = new ArrayList<>();
+                ParserUtils.parseFabricDependencies(dependencyList, jsonObject, "depends", true);
+                ParserUtils.parseFabricDependencies(dependencyList, jsonObject, "recommends", false);
+
+                parsedInfos.add(ParserUtils.createModInfoFromJsonObject(jsonObject,
+                        "id", "name", "version", "description",
+                        dependencyList.toArray(new Dependency[0])));
+            }
+
+            return parsedInfos.toArray(new BasicModInfo[0]);
+        }
+    },
+    /**
+     * Quilt platform, which uses the {@code quilt.mod.json} file. As the extensions suggests, it stores data in the JSON format.
+     */
+    QUILT("quilt.mod.json") {
+        @Override
+        protected BasicModInfo[] parseFileData(String fileData) {
+            JsonObject jsonObj = GSON.fromJson(fileData, JsonObject.class);
+            if(jsonObj == null) return BasicModInfo.emptyArray();
+
+            if(!jsonObj.has("quilt_loader") || !jsonObj.get("quilt_loader").isJsonObject()) return BasicModInfo.emptyArray();
+            JsonObject quiltLoader = jsonObj.getAsJsonObject("quilt_loader");
+            String modId = getValidString(quiltLoader, "id");
+            String version = getValidString(quiltLoader, "version");
+
+            String name = null;
+            String description = null;
+            if(quiltLoader.has("metadata") && quiltLoader.get("metadata").isJsonObject()) {
+                JsonObject metadata = quiltLoader.getAsJsonObject("metadata");
+                name = getValidString(metadata, "name");
+                description = getValidString(metadata, "description");
+            }
+
+            List<Dependency> dependencies = new ArrayList<>();
+            if(quiltLoader.has("depends") && quiltLoader.get("depends").isJsonArray()) {
+                for (JsonElement dependency : quiltLoader.getAsJsonArray("depends")) {
+                    if(!dependency.isJsonObject()) continue;
+                    JsonObject dependencyObject = dependency.getAsJsonObject();
+                    String dependencyId = getValidString(dependencyObject, "id");
+                    boolean isMandatory = true;
+                    if(dependencyObject.has("optional")
+                            && dependencyObject.get("optional").isJsonPrimitive()
+                            && dependencyObject.get("optional").getAsJsonPrimitive().isString()) {
+                        isMandatory = !dependencyObject.get("optional").getAsBoolean();
+                    }
+                    String versions = "*";
+
+                    if(dependencyObject.has("versions")) {
+                        JsonElement dependencyVersion = dependencyObject.get("versions");
+                        if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
+                            versions = dependencyVersion.getAsString();
+                        } else if (dependencyVersion.isJsonArray()) {
+                            versions = StreamSupport.stream(dependencyVersion.getAsJsonArray().spliterator(), false)
+                                    .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
+                                    .map(JsonElement::getAsString)
+                                    .collect(Collectors.joining(" OR "));
+                        }
+                    }
+
+                    dependencies.add(new StandardDependency(dependencyId, versions, isMandatory));
+                }
+            }
+
+            return new BasicModInfo[] {
+                    new BasicModInfo(modId, name, version, description, dependencies.toArray(new Dependency[0]))
+            };
         }
     };
 
@@ -144,11 +224,11 @@ public enum Platform {
      *
      * @param toParse The string to parse, expected to be in the format of the specific platform (JSON, TOML, etc.).
      *                This string must match the format required by the platform; otherwise, parsing will fail.
-     * @return The {@link BasicModInfo} object containing mod information.
+     * @return An array of {@link BasicModInfo} objects containing mod information. Each object represents one specified mod namespace in the modinfo file.
      * @throws IllegalArgumentException If the input string is null.
-     * @throws ModInfoParseException If an error occurs while parsing the TOML (for Forge) or JSON (for Legacy Forge and Fabric).
+     * @throws ModInfoParseException If an error occurs while parsing the mod info file due to invalid formatting, missing fields, or an unexpected data structure.
      */
-    public BasicModInfo parse(String toParse) {
+    public BasicModInfo[] parse(String toParse) {
         if (toParse == null) {
             throw new IllegalArgumentException("Input string cannot be null");
         }
@@ -165,7 +245,8 @@ public enum Platform {
      * Reads and returns the content of the platform-specific info file (e.g. {@code mcmod.info}, {@code mods.toml}, etc.) from a zip archive.
      *
      * @param zip The {@link ZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
-     * @return The content of the info file as a string, or {@code null} if the info file was not found.
+     * @return The content of the first matching info file as a string, or {@code null} if none are found.
+     *         This method reads the ZIP file once and stops searching after the first match.
      * @throws IOException If an error occurs while reading the zip file or its entries.
      */
     public String getInfoFileContent(ZipFile zip) throws IOException {
@@ -188,7 +269,7 @@ public enum Platform {
      * @param fileData The data that was written into the mod info file
      * @return The parsed data
      */
-    protected abstract BasicModInfo parseFileData(String fileData);
+    protected abstract BasicModInfo[] parseFileData(String fileData);
 
     /**
      * Finds the mod platform(s) (e.g. Forge, Fabric) by inspecting the files inside the provided mod archive.
@@ -196,7 +277,7 @@ public enum Platform {
      *
      * @param file The mod file, which must be a zip archive (e.g., .jar, .zip) or a similar format.
      * @return An array of {@link Platform} values representing the platforms found in the file.
-     *         If no platforms are found, returns an empty array.
+     *         If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
      * @throws IOException If the file is not a valid zip archive or an I/O error occurs while reading the file.
      */
     public static Platform[] findModPlatform(File file) throws IOException {

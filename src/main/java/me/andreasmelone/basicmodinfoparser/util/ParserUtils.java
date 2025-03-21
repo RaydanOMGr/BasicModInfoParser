@@ -23,6 +23,7 @@
  */
 package me.andreasmelone.basicmodinfoparser.util;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.andreasmelone.basicmodinfoparser.BasicModInfo;
@@ -44,6 +45,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class ParserUtils {
+    public static final Gson GSON = new Gson();
+
     /**
      * Compares an array of paths to a single path to check if any match after normalisation.<p>
      * This ensures that two paths are considered equal, even if their string representations differ
@@ -114,6 +117,21 @@ public class ParserUtils {
     }
 
     /**
+     * Helper method to fetch a valid string value from a {@link JsonObject}
+     * by key.
+     *
+     * @param obj       The {@link JsonObject} from which to retrieve the value.
+     * @param key       The key for the value to be retrieved.
+     * @return The string value if found and valid, or {@code null} if not found
+     * or invalid.
+     */
+    public static String getValidString(JsonObject obj, String key) {
+        return findValidValue(obj, key, (element) -> true)
+                .map(JsonElement::getAsString)
+                .orElse(null);
+    }
+
+    /**
      * Parses a dependency string into a {@link ForgeDependency} object.
      * <p>
      * This method parses a dependency string following the legacy Forge dependency format and returns
@@ -122,7 +140,7 @@ public class ParserUtils {
      * </p>
      *
      * @param dependencyString The string representation of the dependency. The format is usually
-     *                         "<ordering>:<modId>@<version>".
+     *                         "ordering:modId@version".
      * @return The parsed {@link ForgeDependency} object or null if invalid. Returns null if the modId
      *         is empty or invalid.
      */
@@ -164,7 +182,7 @@ public class ParserUtils {
      */
     public static Dependency parseForgeDependency(TomlTable dependencyTable) {
         String depModId = dependencyTable.getString("modId");
-        boolean mandatory = dependencyTable.getBoolean("mandatory");
+        boolean mandatory = dependencyTable.getBoolean("mandatory", () -> true);
         String versionRange = dependencyTable.getString("versionRange");
         String ordering = dependencyTable.getString("ordering");
         String side = dependencyTable.getString("side");
@@ -202,7 +220,7 @@ public class ParserUtils {
                     String resultingVersion = StreamSupport.stream(dependency.getAsJsonArray().spliterator(), false)
                             .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
                             .map(JsonElement::getAsString)
-                            .collect(Collectors.joining(" "));
+                            .collect(Collectors.joining(" OR "));
                     dependencyList.add(new StandardDependency(dependencyKey, resultingVersion, mandatory));
                 }
             });

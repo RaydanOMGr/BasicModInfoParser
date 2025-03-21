@@ -1,32 +1,33 @@
 # BasicModInfoParser
-
-[![](https://jitpack.io/v/RaydanOMGr/BasicModInfoParser.svg)](https://jitpack.io/#RaydanOMGr/BasicModInfoParser)
-
-BasicModInfoParser is a lightweight Java library that helps you extract basic information from mod files (such as `.jar` files) for platforms like Minecraft Forge or Fabric. The library parses data such as mod ID, name, version, and description, making it easier to handle mod metadata programmatically.
+BasicModInfoParser is a lightweight Java library that helps you extract basic information from mod files `.jar` files for platforms like Minecraft Forge or Fabric. The library parses data such as mod ID, name, version, description, and dependencies, making it easier to handle mod metadata programmatically.
 
 ## Features
-- Supports detecting mod platforms (Forge, Fabric, etc.).
+- Supports detecting mod platforms (Forge, Fabric, Quilt).
 - Parses mod metadata, including:
   - Mod ID
   - Mod Name
   - Version
   - Description
+  - Dependencies
 
 ## Installation
 
-To include this library in your project using JitPack, follow these steps:
+To include this library in your project, follow these steps:
 
-1. Add the JitPack repository to your project's `build.gradle` file (or equivalent for other build systems).
+1. Add the Radsteve's repository to your project's `build.gradle(.kts)` file (or equivalent for other build systems).
 
 ### Gradle
 
 ```groovy
 repositories {
-    maven { url 'https://jitpack.io' }
+    maven {
+        name "radRepo"
+        url "https://maven.radsteve.net/public"
+    }
 }
 
 dependencies {
-    implementation 'com.github.RaydanOMGr:BasicModInfoParser:1.1.0'
+    implementation("me.andreasmelone:BasicModInfoParser:2.0.0")
 }
 ```
 
@@ -35,15 +36,16 @@ dependencies {
 ```xml
 <repositories>
     <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
+        <id>rad-repo</id>
+        <name>rad's maven</name>
+        <url>https://maven.radsteve.net/public</url>
     </repository>
 </repositories>
 
 <dependency>
-    <groupId>com.github.RaydanOMGr</groupId>
+    <groupId>me.andreasmelone</groupId>
     <artifactId>BasicModInfoParser</artifactId>
-    <version>1.1.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -70,16 +72,20 @@ public class ModInfoExample {
                 try (JarFile jarFile = new JarFile(modFile)) {
                     // Detect the mod platform (Forge, Fabric, etc.)
                     Platform[] platforms = Platform.findModPlatform(modFile);
+                    if (platforms.length == 0) {
+                      System.out.println("No supported platform found for: " + modFile.getName());
+                      continue;
+                    }
                     for (Platform platform : platforms) {
                         // Get the mod info content and parse it
                         String modInfoContent = platform.getInfoFileContent(jarFile);
-                        BasicModInfo modInfo = platform.parse(modInfoContent);
-                        
-                        // Output the parsed mod information
-                        System.out.println("Mod ID: " + modInfo.getId());
-                        System.out.println("Mod Name: " + modInfo.getName());
-                        System.out.println("Mod Version: " + modInfo.getVersion());
-                        System.out.println("Mod Description: " + modInfo.getDescription());
+                        for(BasicModInfo modInfo : platform.parse(modInfoContent)) {
+                          // Output the parsed mod information
+                          System.out.println("Mod ID: " + modInfo.getId());
+                          System.out.println("Mod Name: " + modInfo.getName());
+                          System.out.println("Mod Version: " + modInfo.getVersion());
+                          System.out.println("Mod Description: " + modInfo.getDescription());
+                        }
                     }
                 } catch (IOException e) {
                     System.err.println("Failed to read mod file: " + modFile.getName());
