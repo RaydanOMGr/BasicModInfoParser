@@ -29,9 +29,13 @@ import com.google.gson.JsonObject;
 import me.andreasmelone.basicmodinfoparser.BasicModInfo;
 import me.andreasmelone.basicmodinfoparser.dependency.Dependency;
 import me.andreasmelone.basicmodinfoparser.dependency.StandardDependency;
+import me.andreasmelone.basicmodinfoparser.dependency.fabric.FabricVersionRange;
 import me.andreasmelone.basicmodinfoparser.dependency.forge.DependencySide;
 import me.andreasmelone.basicmodinfoparser.dependency.forge.ForgeDependency;
+import me.andreasmelone.basicmodinfoparser.dependency.forge.MavenVersionRange;
 import me.andreasmelone.basicmodinfoparser.dependency.forge.Ordering;
+import me.andreasmelone.basicmodinfoparser.dependency.version.*;
+import org.jetbrains.annotations.NotNull;
 import org.tomlj.TomlTable;
 
 import java.io.IOException;
@@ -88,8 +92,8 @@ public class ParserUtils {
      * @param jsonObject The {@link JsonObject} in which to search for the value.
      * @param key        The key for which the value needs to be found.
      * @param predicate  The predicate that the value of the key must satisfy.
-     * @return An {@link Optional} containing the {@link JsonElement} if it exists and matches the predicate,
-     * or an empty {@link Optional} if the value was not found or did not match.
+     * @return An {@link java.util.Optional} containing the {@link JsonElement} if it exists and matches the predicate,
+     * or a {@link Optional#empty()} if the value was not found or did not match.
      */
     public static Optional<JsonElement> findValidValue(JsonObject jsonObject, String key, Predicate<JsonElement> predicate) {
         if (!jsonObject.has(key)) {
@@ -141,10 +145,11 @@ public class ParserUtils {
      *
      * @param dependencyString The string representation of the dependency. The format is usually
      *                         "ordering:modId@version".
-     * @return The parsed {@link ForgeDependency} object or null if invalid. Returns null if the modId
+     * @return The parsed {@link ForgeDependency} object wrapped inside a {@link Optional}, can be {@link Optional#empty()} if invalid. Returns an {@link Optional#empty()} if the modId
      *         is empty or invalid.
      */
-    public static Dependency parseLegacyForgeDependency(String dependencyString) {
+    @NotNull
+    public static Optional<Dependency> parseLegacyForgeDependency(String dependencyString) {
         String modId;
         String version = null;
         Ordering ordering = Ordering.NONE;
@@ -164,10 +169,11 @@ public class ParserUtils {
         modId = dependencyString;
 
         if (modId == null || modId.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
-        return new ForgeDependency(modId, version, true, ordering, DependencySide.BOTH);
+        Optional<MavenVersionRange> range = MavenVersionRange.parse(version);
+        return Optional.of(new ForgeDependency(modId, range.isPresent() ? range.get() : UnknownVersionRange.parse(version), true, ordering, DependencySide.BOTH));
     }
 
     /**
@@ -180,6 +186,7 @@ public class ParserUtils {
      * @param dependencyTable The TomlTable containing the dependency's data.
      * @return A {@link ForgeDependency} object constructed from the values in the given TomlTable.
      */
+    @NotNull
     public static Dependency parseForgeDependency(TomlTable dependencyTable) {
         String depModId = dependencyTable.getString("modId");
         boolean mandatory = dependencyTable.getBoolean("mandatory", () -> true);
@@ -187,8 +194,9 @@ public class ParserUtils {
         String ordering = dependencyTable.getString("ordering");
         String side = dependencyTable.getString("side");
 
+        Optional<MavenVersionRange> range = MavenVersionRange.parse(versionRange);
         return new ForgeDependency(
-                depModId, versionRange, mandatory,
+                depModId, range.isPresent() ? range.get() : UnknownVersionRange.parse(versionRange), mandatory,
                 Ordering.getFromString(ordering), DependencySide.getFromString(side)
         );
     }
@@ -215,13 +223,17 @@ public class ParserUtils {
                 JsonElement dependency = entry.getValue();
 
                 if (dependency.isJsonPrimitive() && dependency.getAsJsonPrimitive().isString()) {
-                    dependencyList.add(new StandardDependency(dependencyKey, dependency.getAsString(), mandatory));
+                    Optional<FabricVersionRange> range = FabricVersionRange.parse(dependency.getAsString());
+                    if(!range.isPresent()) return;
+                    dependencyList.add(new StandardDependency(dependencyKey, mandatory, range.get()));
                 } else if (dependency.isJsonArray()) {
                     String resultingVersion = StreamSupport.stream(dependency.getAsJsonArray().spliterator(), false)
                             .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
                             .map(JsonElement::getAsString)
                             .collect(Collectors.joining(" OR "));
-                    dependencyList.add(new StandardDependency(dependencyKey, resultingVersion, mandatory));
+                    Optional<FabricVersionRange> range = FabricVersionRange.parse(resultingVersion);
+                    if(!range.isPresent()) return;
+                    dependencyList.add(new StandardDependency(dependencyKey, mandatory, range.get()));
                 }
             });
         }
@@ -244,7 +256,7 @@ public class ParserUtils {
      */
     public static BasicModInfo createModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
                                                            String displayNameKey, String versionKey,
-                                                           String descriptionKey, Dependency... dependencies) {
+                                                           String descriptionKey, Dependency[] dependencies) {
         Predicate<JsonElement> isStringPredicate = element ->
                 element.isJsonPrimitive() && element.getAsJsonPrimitive().isString();
 
@@ -253,6 +265,7 @@ public class ParserUtils {
         String description = getValidString(jsonObject, descriptionKey, isStringPredicate);
         String version = getValidString(jsonObject, versionKey, isStringPredicate);
 
-        return new BasicModInfo(modId, name, version, description, dependencies);
+        Optional<SemanticVersion> mavenVersion = SemanticVersion.parse(version);
+        return new BasicModInfo(modId, name, mavenVersion.isPresent() ? mavenVersion.get() : UnknownVersion.parse(version), description, dependencies);
     }
 }

@@ -26,8 +26,11 @@ package me.andreasmelone.basicmodinfoparser;
 import com.google.gson.*;
 import me.andreasmelone.basicmodinfoparser.dependency.Dependency;
 import me.andreasmelone.basicmodinfoparser.dependency.StandardDependency;
+import me.andreasmelone.basicmodinfoparser.dependency.fabric.FabricVersionRange;
+import me.andreasmelone.basicmodinfoparser.dependency.version.*;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.ParserUtils;
+import org.jetbrains.annotations.NotNull;
 import org.tomlj.*;
 
 import java.io.File;
@@ -36,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -68,10 +72,7 @@ public enum Platform {
                         if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
                             continue;
                         }
-                        Dependency dependency = parseLegacyForgeDependency(element.getAsString());
-                        if (dependency != null) {
-                            dependencyList.add(dependency);
-                        }
+                        parseLegacyForgeDependency(element.getAsString()).ifPresent(dependencyList::add);
                     }
                 }
                 parsedInfos.add(ParserUtils.createModInfoFromJsonObject(modObject,
@@ -115,8 +116,10 @@ public enum Platform {
                         }
                     }
                 }
+
+                Optional<MavenVersion> mavenVersion = MavenVersion.parse(version);
                 parsedInfos.add(new BasicModInfo(
-                        modId, name, version, description,
+                        modId, name, mavenVersion.isPresent() ? mavenVersion.get() : UnknownVersion.parse(version), description,
                         dependencies.toArray(new Dependency[0])
                 ));
             }
@@ -145,7 +148,6 @@ public enum Platform {
 
                 List<Dependency> dependencyList = new ArrayList<>();
                 ParserUtils.parseFabricDependencies(dependencyList, jsonObject, "depends", true);
-                ParserUtils.parseFabricDependencies(dependencyList, jsonObject, "recommends", false);
 
                 parsedInfos.add(ParserUtils.createModInfoFromJsonObject(jsonObject,
                         "id", "name", "version", "description",
@@ -203,12 +205,18 @@ public enum Platform {
                         }
                     }
 
-                    dependencies.add(new StandardDependency(dependencyId, versions, isMandatory));
+                    Optional<FabricVersionRange> fabricVersionRange = FabricVersionRange.parse(version);
+                    dependencies.add(new StandardDependency(dependencyId, isMandatory, fabricVersionRange.isPresent() ?
+                            fabricVersionRange.get() : UnknownVersionRange.parse(version)));
                 }
             }
 
+            Optional<SemanticVersion> semanticVersion = SemanticVersion.parse(version);
             return new BasicModInfo[] {
-                    new BasicModInfo(modId, name, version, description, dependencies.toArray(new Dependency[0]))
+                    new BasicModInfo(modId, name,
+                            semanticVersion.isPresent() ? semanticVersion.get() : UnknownVersion.parse(version),
+                            description, dependencies.toArray(new Dependency[0])
+                    )
             };
         }
     };
@@ -228,6 +236,7 @@ public enum Platform {
      * @throws IllegalArgumentException If the input string is null.
      * @throws ModInfoParseException If an error occurs while parsing the mod info file due to invalid formatting, missing fields, or an unexpected data structure.
      */
+    @NotNull
     public BasicModInfo[] parse(String toParse) {
         if (toParse == null) {
             throw new IllegalArgumentException("Input string cannot be null");
@@ -249,26 +258,29 @@ public enum Platform {
      *         This method reads the ZIP file once and stops searching after the first match.
      * @throws IOException If an error occurs while reading the zip file or its entries.
      */
-    public String getInfoFileContent(ZipFile zip) throws IOException {
+    @NotNull
+    public Optional<String> getInfoFileContent(ZipFile zip) throws IOException {
         try (ZipInputStream in = new ZipInputStream(new FileInputStream(zip.getName()))) {
             ZipEntry next;
             while ((next = in.getNextEntry()) != null) {
                 if (next.isDirectory()) continue;
                 if (comparePaths(this.infoFilePaths, next.getName())) {
                     try (InputStream entry = zip.getInputStream(next)) {
-                        return readEverythingAsString(entry);
+                        return Optional.of(readEverythingAsString(entry));
                     }
                 }
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     /**
      * Internal method for parsing file data that should be implemented. Does not include safety checks like {@link Platform#parse(String)}
+     *
      * @param fileData The data that was written into the mod info file
      * @return The parsed data
      */
+    @NotNull
     protected abstract BasicModInfo[] parseFileData(String fileData);
 
     /**
@@ -280,6 +292,7 @@ public enum Platform {
      *         If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
      * @throws IOException If the file is not a valid zip archive or an I/O error occurs while reading the file.
      */
+    @NotNull
     public static Platform[] findModPlatform(File file) throws IOException {
         List<Platform> platforms = new ArrayList<>();
 

@@ -23,17 +23,23 @@
  */
 package me.andreasmelone.basicmodinfoparser.dependency;
 
+import me.andreasmelone.basicmodinfoparser.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class StandardDependency implements Dependency {
-    private final String id;
-    private final String version;
-    private final boolean mandatory;
+    protected final String id;
+    protected final boolean mandatory;
+    protected final VersionRange<?> range;
 
-    public StandardDependency(String id, String version, boolean mandatory) {
+    public StandardDependency(String id, boolean mandatory, VersionRange<?> range) {
         this.id = id;
-        this.version = version;
         this.mandatory = mandatory;
+        this.range = range;
     }
 
     @Override
@@ -42,8 +48,8 @@ public class StandardDependency implements Dependency {
     }
 
     @Override
-    public String getRequiredVersion() {
-        return version;
+    public VersionRange<?> getVersionRange() {
+        return range;
     }
 
     @Override
@@ -52,23 +58,33 @@ public class StandardDependency implements Dependency {
     }
 
     @Override
-    public String toString() {
-        return "StandardDependency{" +
-                "id='" + id + '\'' +
-                ", version='" + version + '\'' +
-                ", mandatory='" + mandatory + '\'' +
-                '}';
+    public @NotNull PresenceStatus isPresent(List<BasicModInfo> mods) {
+        return PresenceStatus.NOT_PRESENT;
+    }
+
+    @Override
+    public @NotNull PresenceStatus isPresent(BasicModInfo[] mods) {
+        return isPresent(Arrays.asList(mods));
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         StandardDependency that = (StandardDependency) o;
-        return Objects.equals(id, that.id) && Objects.equals(version, that.version) && mandatory == that.mandatory;
+        return mandatory == that.mandatory && Objects.equals(id, that.id) && Objects.equals(range, that.range);
+    }
+
+    @Override
+    public String toString() {
+        return "StandardDependency{" +
+                "id='" + id + '\'' +
+                ", mandatory=" + mandatory +
+                ", range=" + range +
+                '}';
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, version, mandatory);
+        return Objects.hash(id, mandatory, range);
     }
 }

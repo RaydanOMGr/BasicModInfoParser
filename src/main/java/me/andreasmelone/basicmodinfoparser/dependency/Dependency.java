@@ -23,6 +23,12 @@
  */
 package me.andreasmelone.basicmodinfoparser.dependency;
 
+import me.andreasmelone.basicmodinfoparser.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
 public interface Dependency {
     /**
      * The ID of the dependency mod
@@ -31,15 +37,28 @@ public interface Dependency {
     String getModId();
 
     /**
-     * The required version, which is usually a <a href="https://maven.apache.org/enforcer/enforcer-rules/versionRanges.html">Maven Version Range</a> when working with forge, whereas
-     * fabric uses their own <a href="https://wiki.fabricmc.net/documentation:fabric_mod_json_spec#versionrange">format</a>.
-     * @return The version range, or null, if none is specified. None being specified usually means any version will do.
+     * The required version of this dependency, parsed as a {@link VersionRange}
+     * @return The version range
      */
-    String getRequiredVersion();
+    VersionRange<?> getVersionRange();
 
     /**
      * Whether the dependency is required for the mod to run or not.
      * @return whether the dependency is mandatory (needed to run the mod)
      */
     boolean isMandatory();
+
+    /**
+     * @param mods a list of mods
+     * @return checks whether this dependency is present in the list of mods
+     */
+    @NotNull
+    PresenceStatus isPresent(List<BasicModInfo> mods);
+
+    /**
+     * @param mods a list of mods
+     * @return checks whether this dependency is present in the list of mods
+     */
+    @NotNull
+    PresenceStatus isPresent(BasicModInfo[] mods);
 }

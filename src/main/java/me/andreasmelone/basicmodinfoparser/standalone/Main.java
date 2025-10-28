@@ -25,9 +25,12 @@ package me.andreasmelone.basicmodinfoparser.standalone;
 
 import me.andreasmelone.basicmodinfoparser.BasicModInfo;
 import me.andreasmelone.basicmodinfoparser.Platform;
+import me.andreasmelone.basicmodinfoparser.dependency.version.MavenVersion;
+import me.andreasmelone.basicmodinfoparser.dependency.version.SemanticVersion;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.jar.JarFile;
 
 public class Main {
@@ -46,7 +49,7 @@ public class Main {
             try {
                 Platform[] platforms = Platform.findModPlatform(file);
                 for(Platform platform : platforms) {
-                    String infoContent = platform.getInfoFileContent(jar);
+                    String infoContent = platform.getInfoFileContent(jar).orElse("");
                     System.out.print(file.getName() + ", " + platform + ": ");
                     for (BasicModInfo modInfo : platform.parse(infoContent)) {
                         System.out.println(modInfo.toString());
@@ -57,5 +60,33 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }
+
+//        Optional<MavenVersion> ver = MavenVersion.parse("1.0.0-alpha.1+metadata");
+//        System.out.println("1 parsed?: " + ver.isPresent());
+//        System.out.println("1 result: " + ver.orElse(null));
+//
+//        ver = MavenVersion.parse("1.0.0");
+//        System.out.println("2 parsed?: " + ver.isPresent());
+//        System.out.println("2 result: " + ver.orElse(null));
+//
+//        ver = MavenVersion.parse("1.0.0+metadata");
+//        System.out.println("3 parsed?: " + ver.isPresent());
+//        System.out.println("3 result: " + ver.orElse(null));
+//
+//        ver = MavenVersion.parse("1.0.0-alpha");
+//        System.out.println("4 parsed?: " + ver.isPresent());
+//        System.out.println("4 result: " + ver.orElse(null));
+//
+//        ver = MavenVersion.parse("1.0.0-alpha.1");
+//        System.out.println("5 parsed?: " + ver.isPresent());
+//        System.out.println("5 result: " + ver.orElse(null));
+//
+//        ver = MavenVersion.parse("1.0-alpha.1+metadata");
+//        System.out.println("6 parsed?: " + ver.isPresent());
+//        System.out.println("6 result: " + ver.orElse(null));
+
+//        Optional<SemanticVersion> ver = SemanticVersion.parse("11.0.0-alpha.3+0.102.0-1.21");
+//        System.out.println("parsed: " + ver.isPresent());
+//        System.out.println("result: " + ver.orElse(null));
     }
 }

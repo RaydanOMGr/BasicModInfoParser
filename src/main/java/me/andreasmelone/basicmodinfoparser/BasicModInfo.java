@@ -24,20 +24,24 @@
 package me.andreasmelone.basicmodinfoparser;
 
 import me.andreasmelone.basicmodinfoparser.dependency.Dependency;
+import me.andreasmelone.basicmodinfoparser.dependency.version.Version;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 public class BasicModInfo {
-    private static final BasicModInfo EMPTY = new BasicModInfo(null, null, null, null);
+    private static final BasicModInfo EMPTY = new BasicModInfo(null, null, null, null, new Dependency[0]);
 
     private final String id;
     private final String name;
-    private final String version;
+    private final Version<?> version;
     private final String description;
     private final Dependency[] dependencies;
 
-    public BasicModInfo(String id, String name, String version, String description, Dependency... dependencies) {
+    public BasicModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description,
+                        @NotNull Dependency[] dependencies) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -49,6 +53,7 @@ public class BasicModInfo {
      * The mod id, which is usually required to be ^[a-z][a-z0-9_]{1,63}$
      * @return the mod id
      */
+    @Nullable
     public String getId() {
         return id;
     }
@@ -57,6 +62,7 @@ public class BasicModInfo {
      * The name of the mod
      * @return the name of the mod
      */
+    @Nullable
     public String getName() {
         return name;
     }
@@ -65,7 +71,8 @@ public class BasicModInfo {
      * The version of the mod. In difference to {@link Dependency}, this is not a version range
      * @return the version of the mod
      */
-    public String getVersion() {
+    @Nullable
+    public Version<?> getVersion() {
         return version;
     }
 
@@ -73,6 +80,7 @@ public class BasicModInfo {
      * The mods description
      * @return the mods description
      */
+    @Nullable
     public String getDescription() {
         return description;
     }
@@ -82,6 +90,7 @@ public class BasicModInfo {
      * @return the mods dependencies
      * @see Dependency
      */
+    @NotNull
     public Dependency[] getDependencies() {
         return dependencies;
     }
@@ -92,24 +101,11 @@ public class BasicModInfo {
      */
     public boolean isEmpty() {
         if(this == EMPTY) return true;
-        return id == null && name == null && version == null && description == null && (dependencies == null || dependencies.length == 0);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        BasicModInfo that = (BasicModInfo) o;
-        return Objects.equals(id, that.id)
-                && Objects.equals(name, that.name)
-                && Objects.equals(version, that.version)
-                && Objects.equals(description, that.description)
-                && Arrays.equals(dependencies, that.dependencies);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, version, description, Arrays.hashCode(dependencies));
+        return id == null
+                && name == null
+                && version == null
+                && description == null
+                && (dependencies == null || dependencies.length == 0);
     }
 
     @Override
@@ -117,16 +113,30 @@ public class BasicModInfo {
         return "BasicModInfo{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
-                ", version='" + version + '\'' +
+                ", version=" + version +
                 ", description='" + description + '\'' +
-                ", dependencies='" + Arrays.toString(dependencies) + '\'' +
+                ", dependencies=" + Arrays.toString(dependencies) +
                 '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        BasicModInfo that = (BasicModInfo) o;
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(version, that.version) && Objects.equals(description, that.description) && Objects.deepEquals(dependencies, that.dependencies);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, version, description, Arrays.hashCode(dependencies));
+    }
+
+    @NotNull
     public static BasicModInfo empty() {
         return EMPTY;
     }
 
+    @NotNull
     public static BasicModInfo[] emptyArray() {
         return new BasicModInfo[0];
     }

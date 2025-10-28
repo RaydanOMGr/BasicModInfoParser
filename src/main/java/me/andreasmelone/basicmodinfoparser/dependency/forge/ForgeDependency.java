@@ -24,6 +24,7 @@
 package me.andreasmelone.basicmodinfoparser.dependency.forge;
 
 import me.andreasmelone.basicmodinfoparser.dependency.StandardDependency;
+import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
 
 import java.util.Objects;
 
@@ -31,8 +32,8 @@ public class ForgeDependency extends StandardDependency {
     private final Ordering ordering;
     private final DependencySide side;
 
-    public ForgeDependency(String id, String version, boolean mandatory, Ordering ordering, DependencySide side) {
-        super(id, version, mandatory);
+    public ForgeDependency(String id, VersionRange<?> version, boolean mandatory, Ordering ordering, DependencySide side) {
+        super(id, mandatory, version);
         this.ordering = ordering;
         this.side = side;
     }
@@ -59,7 +60,7 @@ public class ForgeDependency extends StandardDependency {
     public String toString() {
         return "ForgeDependency{" +
                 "id=" + getModId() +
-                ", version=" + getRequiredVersion() +
+                ", version=" + getVersionRange() +
                 ", mandatory=" + isMandatory() +
                 ", ordering=" + ordering +
                 ", side=" + side +
