@@ -227,10 +227,10 @@ public class ParserUtils {
                     if(!range.isPresent()) return;
                     dependencyList.add(new StandardDependency(dependencyKey, mandatory, range.get()));
                 } else if (dependency.isJsonArray()) {
-                    String resultingVersion = StreamSupport.stream(dependency.getAsJsonArray().spliterator(), false)
+                    String[] resultingVersion = StreamSupport.stream(dependency.getAsJsonArray().spliterator(), false)
                             .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
                             .map(JsonElement::getAsString)
-                            .collect(Collectors.joining(" OR "));
+                            .toArray(String[]::new);
                     Optional<FabricVersionRange> range = FabricVersionRange.parse(resultingVersion);
                     if(!range.isPresent()) return;
                     dependencyList.add(new StandardDependency(dependencyKey, mandatory, range.get()));
@@ -265,7 +265,7 @@ public class ParserUtils {
         String description = getValidString(jsonObject, descriptionKey, isStringPredicate);
         String version = getValidString(jsonObject, versionKey, isStringPredicate);
 
-        Optional<SemanticVersion> mavenVersion = SemanticVersion.parse(version);
+        Optional<LooseSemanticVersion> mavenVersion = LooseSemanticVersion.parse(version);
         return new BasicModInfo(modId, name, mavenVersion.isPresent() ? mavenVersion.get() : UnknownVersion.parse(version), description, dependencies);
     }
 }

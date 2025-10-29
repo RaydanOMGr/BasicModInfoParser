@@ -191,27 +191,27 @@ public enum Platform {
                             && dependencyObject.get("optional").getAsJsonPrimitive().isString()) {
                         isMandatory = !dependencyObject.get("optional").getAsBoolean();
                     }
-                    String versions = "*";
+                    String[] versions = new String[] { "*" };
 
                     if(dependencyObject.has("versions")) {
                         JsonElement dependencyVersion = dependencyObject.get("versions");
                         if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
-                            versions = dependencyVersion.getAsString();
+                            versions[0] = dependencyVersion.getAsString();
                         } else if (dependencyVersion.isJsonArray()) {
                             versions = StreamSupport.stream(dependencyVersion.getAsJsonArray().spliterator(), false)
                                     .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
                                     .map(JsonElement::getAsString)
-                                    .collect(Collectors.joining(" OR "));
+                                    .toArray(String[]::new);
                         }
                     }
 
-                    Optional<FabricVersionRange> fabricVersionRange = FabricVersionRange.parse(version);
+                    Optional<FabricVersionRange> fabricVersionRange = FabricVersionRange.parse(versions);
                     dependencies.add(new StandardDependency(dependencyId, isMandatory, fabricVersionRange.isPresent() ?
                             fabricVersionRange.get() : UnknownVersionRange.parse(version)));
                 }
             }
 
-            Optional<SemanticVersion> semanticVersion = SemanticVersion.parse(version);
+            Optional<LooseSemanticVersion> semanticVersion = LooseSemanticVersion.parse(version, false);
             return new BasicModInfo[] {
                     new BasicModInfo(modId, name,
                             semanticVersion.isPresent() ? semanticVersion.get() : UnknownVersion.parse(version),
