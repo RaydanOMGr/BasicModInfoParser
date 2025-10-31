@@ -1,4 +1,4 @@
-package me.andreasmelone.basicmodinfoparser.dependency;
+package me.andreasmelone.basicmodinfoparser.platform.dependency;
 
 /**
  * The presence status of a dependency
@@ -9,13 +9,9 @@ public enum PresenceStatus {
      */
     PRESENT(true),
     /**
-     * The dependency is present but its version is too low
+     * The dependency is present but its version doesn't match the range
      */
-    VERSION_TOO_LOW(false),
-    /**
-     * The dependency is present but its version is too high
-     */
-    VERSION_TOO_HIGH(false),
+    VERSION_MISMATCH(false),
     /**
      * The dependency is not present
      */
@@ -27,6 +23,9 @@ public enum PresenceStatus {
         this.success = success;
     }
 
+    /**
+     * @return if this constant represents a success
+     */
     public boolean isSuccess() {
         return success;
     }

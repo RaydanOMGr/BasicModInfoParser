@@ -21,12 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser.dependency;
+package me.andreasmelone.basicmodinfoparser.platform.dependency;
 
-import me.andreasmelone.basicmodinfoparser.BasicModInfo;
-import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
+import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.List;
 
 public interface Dependency {
@@ -56,9 +57,11 @@ public interface Dependency {
     PresenceStatus isPresent(List<BasicModInfo> mods);
 
     /**
-     * @param mods a list of mods
+     * @param mods an array of mods
      * @return checks whether this dependency is present in the list of mods
      */
     @NotNull
-    PresenceStatus isPresent(BasicModInfo[] mods);
+    default PresenceStatus isPresent(BasicModInfo[] mods) {
+        return isPresent(Arrays.asList(mods));
+    }
 }

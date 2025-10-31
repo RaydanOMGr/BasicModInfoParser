@@ -21,37 +21,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser.dependency.forge;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
 /**
- * When the dependency must be loaded. {@link Ordering#BEFORE} means it must be loaded before the mod, {@link Ordering#AFTER} means it must be loaded
- * after the mod, {@link Ordering#NONE} means the order of loading does not matter.
+ * The side on which the dependency is required. If the side is not {@link DependencySide#BOTH}, then the dependency is not needed on the opposite side.
  */
-public enum Ordering {
+public enum DependencySide {
     /**
-     * Dependency must be loaded before the mod
+     * The dependency is required on the client.
      */
-    BEFORE,
+    CLIENT,
 
     /**
-     * Dependency must be loaded after the mod
+     * The dependency is required on the server.
      */
-    AFTER,
+    SERVER,
 
     /**
-     * Order loading of the dependency does not matter
+     * The dependency is required on both sides (always)
      */
-    NONE;
+    BOTH;
 
-    public static Ordering getFromString(String ordering) {
-        if (ordering.equalsIgnoreCase("before")
-                || ordering.equalsIgnoreCase("required-before")) {
-            return Ordering.BEFORE;
-        } else if(ordering.equalsIgnoreCase("after")
-                || ordering.equalsIgnoreCase("required-after")) {
-            return Ordering.AFTER;
+    public DependencySide opposite() {
+        if(this == CLIENT) return SERVER;
+        if(this == SERVER) return CLIENT;
+
+        return BOTH;
+    }
+
+    public static DependencySide getFromString(String side) {
+        if(side.equalsIgnoreCase("both")) {
+            return BOTH;
+        } else if(side.equalsIgnoreCase("client")) {
+            return CLIENT;
+        } else if(side.equalsIgnoreCase("server")) {
+            return SERVER;
         }
 
-        return Ordering.NONE;
+        throw new IllegalArgumentException("Invalid side value: " + side);
     }
 }

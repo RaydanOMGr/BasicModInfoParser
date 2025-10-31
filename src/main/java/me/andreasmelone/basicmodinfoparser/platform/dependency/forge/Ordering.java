@@ -21,43 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser.dependency.forge;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
 /**
- * The side on which the dependency is required. If the side is not {@link DependencySide#BOTH}, then the dependency is not needed on the opposite side.
+ * When the dependency must be loaded. {@link Ordering#BEFORE} means it must be loaded before the mod, {@link Ordering#AFTER} means it must be loaded
+ * after the mod, {@link Ordering#NONE} means the order of loading does not matter.
  */
-public enum DependencySide {
+public enum Ordering {
     /**
-     * The dependency is required on the client.
+     * Dependency must be loaded before the mod
      */
-    CLIENT,
-
-    /**
-     * The dependency is required on the server.
-     */
-    SERVER,
+    BEFORE,
 
     /**
-     * The dependency is required on both sides (always)
+     * Dependency must be loaded after the mod
      */
-    BOTH;
+    AFTER,
 
-    public DependencySide opposite() {
-        if(this == CLIENT) return SERVER;
-        if(this == SERVER) return CLIENT;
+    /**
+     * Order loading of the dependency does not matter
+     */
+    NONE;
 
-        return BOTH;
-    }
-
-    public static DependencySide getFromString(String side) {
-        if(side.equalsIgnoreCase("both")) {
-            return BOTH;
-        } else if(side.equalsIgnoreCase("client")) {
-            return CLIENT;
-        } else if(side.equalsIgnoreCase("server")) {
-            return SERVER;
+    public static Ordering getFromString(String ordering) {
+        if (ordering.equalsIgnoreCase("before")
+                || ordering.equalsIgnoreCase("required-before")) {
+            return Ordering.BEFORE;
+        } else if(ordering.equalsIgnoreCase("after")
+                || ordering.equalsIgnoreCase("required-after")) {
+            return Ordering.AFTER;
         }
 
-        throw new IllegalArgumentException("Invalid side value: " + side);
+        return Ordering.NONE;
     }
 }

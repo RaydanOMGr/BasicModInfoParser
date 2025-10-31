@@ -1,5 +1,6 @@
-package me.andreasmelone.basicmodinfoparser.dependency.version;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,6 +99,11 @@ public class MavenVersion implements Version<MavenVersion> {
         return "MavenVersion{" +
                 "versionSegments=" + Arrays.toString(versionSegments) +
                 '}';
+    }
+
+    @Override
+    public Class<MavenVersion> getType() {
+        return MavenVersion.class;
     }
 
     public interface VersionSegment extends Comparable<VersionSegment> {

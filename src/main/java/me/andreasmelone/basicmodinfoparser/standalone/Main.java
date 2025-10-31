@@ -23,13 +23,16 @@
  */
 package me.andreasmelone.basicmodinfoparser.standalone;
 
-import me.andreasmelone.basicmodinfoparser.BasicModInfo;
-import me.andreasmelone.basicmodinfoparser.Platform;
-import me.andreasmelone.basicmodinfoparser.dependency.fabric.FabricVersionRange;
-import me.andreasmelone.basicmodinfoparser.dependency.version.LooseSemanticVersion;
+import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.Platform;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.FabricVersionRange;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.LooseSemanticVersion;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarFile;
 
@@ -37,6 +40,8 @@ public class Main {
     public static void main(String[] args) {
         File[] currentFiles = new File(".").listFiles();
         assert currentFiles != null;
+        List<BasicModInfo> mods = new ArrayList<>();
+
         for(File file : currentFiles) {
             if (!file.getName().endsWith(".jar") || !file.isFile()) return;
             JarFile jar;
@@ -46,6 +51,7 @@ public class Main {
                 return;
             }
 
+
             try {
                 Platform[] platforms = Platform.findModPlatform(file);
                 for(Platform platform : platforms) {
@@ -53,11 +59,24 @@ public class Main {
                     System.out.print(file.getName() + ", " + platform + ": ");
                     for (BasicModInfo modInfo : platform.parse(infoContent)) {
                         System.out.println(modInfo.toString());
+                        mods.add(modInfo);
                     }
                     System.out.println();
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        for (BasicModInfo mod : mods) {
+            for (Dependency dependency : mod.getDependencies()) {
+                List<BasicModInfo> newModsList = new ArrayList<>(mods);
+                mod.getPlatform().createLoaderInfo(null).ifPresent(newModsList::add);
+
+                System.out.println("Dependency " + dependency.getModId() + " for " + mod.getId() + ": ");
+                System.out.println("\tRequired version: " + dependency.getVersionRange().getStringRepresentation());
+                System.out.println("\tMandatory: " + dependency.isMandatory());
+                System.out.println("\tPresent: " + dependency.isPresent(newModsList));
             }
         }
 
@@ -113,7 +132,7 @@ public class Main {
 //        System.out.println("parsed: " + ver.isPresent());
 //        System.out.println("result: " + ver.orElse(null));
 
-//        Optional<FabricVersionRange> range = FabricVersionRange.parse("<1.20.1-alpha.1+buildmetadata");
+//        Optional<FabricVersionRange> range = FabricVersionRange.parse("*");
 //        System.out.println("1 parsed: " + range.isPresent());
 //        System.out.println("1 result: " + range.orElse(null));
 //        if(range.isPresent()) {
@@ -123,6 +142,7 @@ public class Main {
 //            LooseSemanticVersion onetentwo = LooseSemanticVersion.parse("1.10.2").get();
 //            LooseSemanticVersion onetwentyonealpha = LooseSemanticVersion.parse("1.20.1-alpha").get();
 //            LooseSemanticVersion onetwentyonealpha2 = LooseSemanticVersion.parse("1.20.1-alpha.2").get();
+//            LooseSemanticVersion onetwentytwonine = LooseSemanticVersion.parse("1.20.2.9").get();
 //
 //            System.out.println("1 tests: ");
 //            System.out.println("\t1.20.1: " + range.get().contains(onetwentyone));
@@ -131,6 +151,7 @@ public class Main {
 //            System.out.println("\t1.10.2: " + range.get().contains(onetentwo));
 //            System.out.println("\t1.20.1-alpha: " + range.get().contains(onetwentyonealpha));
 //            System.out.println("\t1.20.1-alpha.2: " + range.get().contains(onetwentyonealpha2));
+//            System.out.println("\t1.20.2.9: " + range.get().contains(onetwentytwonine));
 //        }
     }
 }

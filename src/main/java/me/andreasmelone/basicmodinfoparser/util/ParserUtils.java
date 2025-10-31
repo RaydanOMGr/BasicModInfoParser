@@ -26,26 +26,31 @@ package me.andreasmelone.basicmodinfoparser.util;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import me.andreasmelone.basicmodinfoparser.BasicModInfo;
-import me.andreasmelone.basicmodinfoparser.dependency.Dependency;
-import me.andreasmelone.basicmodinfoparser.dependency.StandardDependency;
-import me.andreasmelone.basicmodinfoparser.dependency.fabric.FabricVersionRange;
-import me.andreasmelone.basicmodinfoparser.dependency.forge.DependencySide;
-import me.andreasmelone.basicmodinfoparser.dependency.forge.ForgeDependency;
-import me.andreasmelone.basicmodinfoparser.dependency.forge.MavenVersionRange;
-import me.andreasmelone.basicmodinfoparser.dependency.forge.Ordering;
-import me.andreasmelone.basicmodinfoparser.dependency.version.*;
+import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.Platform;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.ProvidedMod;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.StandardDependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.LooseSemanticVersion;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.forge.*;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
+import me.andreasmelone.basicmodinfoparser.platform.modinfo.FabricModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.modinfo.StandardBasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.FabricVersionRange;
 import org.jetbrains.annotations.NotNull;
+import org.tomlj.Toml;
+import org.tomlj.TomlArray;
+import org.tomlj.TomlParseResult;
 import org.tomlj.TomlTable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class ParserUtils {
@@ -173,7 +178,7 @@ public class ParserUtils {
         }
 
         Optional<MavenVersionRange> range = MavenVersionRange.parse(version);
-        return Optional.of(new ForgeDependency(modId, range.isPresent() ? range.get() : UnknownVersionRange.parse(version), true, ordering, DependencySide.BOTH));
+        return Optional.of(new ForgeDependency(modId, range.orElse(null), true, ordering, DependencySide.BOTH));
     }
 
     /**
@@ -196,7 +201,7 @@ public class ParserUtils {
 
         Optional<MavenVersionRange> range = MavenVersionRange.parse(versionRange);
         return new ForgeDependency(
-                depModId, range.isPresent() ? range.get() : UnknownVersionRange.parse(versionRange), mandatory,
+                depModId, range.orElse(null), mandatory,
                 Ordering.getFromString(ordering), DependencySide.getFromString(side)
         );
     }
@@ -225,7 +230,7 @@ public class ParserUtils {
                 if (dependency.isJsonPrimitive() && dependency.getAsJsonPrimitive().isString()) {
                     Optional<FabricVersionRange> range = FabricVersionRange.parse(dependency.getAsString());
                     if(!range.isPresent()) return;
-                    dependencyList.add(new StandardDependency(dependencyKey, mandatory, range.get()));
+                    dependencyList.add(new StandardDependency<>(dependencyKey, mandatory, range.get()));
                 } else if (dependency.isJsonArray()) {
                     String[] resultingVersion = StreamSupport.stream(dependency.getAsJsonArray().spliterator(), false)
                             .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
@@ -233,7 +238,7 @@ public class ParserUtils {
                             .toArray(String[]::new);
                     Optional<FabricVersionRange> range = FabricVersionRange.parse(resultingVersion);
                     if(!range.isPresent()) return;
-                    dependencyList.add(new StandardDependency(dependencyKey, mandatory, range.get()));
+                    dependencyList.add(new StandardDependency<>(dependencyKey, mandatory, range.get()));
                 }
             });
         }
@@ -251,12 +256,15 @@ public class ParserUtils {
      * @param displayNameKey  The key used to retrieve the mod display name from the JSON object.
      * @param versionKey      The key used to retrieve the mod version from the JSON object.
      * @param descriptionKey  The key used to retrieve the mod description from the JSON object.
-     * @param dependencies    The list of {@link Dependency} objects that should be associated with the mod.
+     * @param logoFileKey     The key used to retrieve the mod icon from the JSON object.
+     * @param dependencies    The list of {@link Dependency} objects that the current mod depends on.
+     * @param platform        The platform the mod is on.
+     *
      * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
      */
-    public static BasicModInfo createModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
-                                                           String displayNameKey, String versionKey,
-                                                           String descriptionKey, Dependency[] dependencies) {
+    public static BasicModInfo createForgeModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
+                                                                String displayNameKey, String versionKey,
+                                                                String descriptionKey, String logoFileKey, List<Dependency> dependencies, Platform platform) {
         Predicate<JsonElement> isStringPredicate = element ->
                 element.isJsonPrimitive() && element.getAsJsonPrimitive().isString();
 
@@ -264,8 +272,84 @@ public class ParserUtils {
         String name = getValidString(jsonObject, displayNameKey, isStringPredicate);
         String description = getValidString(jsonObject, descriptionKey, isStringPredicate);
         String version = getValidString(jsonObject, versionKey, isStringPredicate);
+        String logo = getValidString(jsonObject, logoFileKey, isStringPredicate);
 
-        Optional<LooseSemanticVersion> mavenVersion = LooseSemanticVersion.parse(version);
-        return new BasicModInfo(modId, name, mavenVersion.isPresent() ? mavenVersion.get() : UnknownVersion.parse(version), description, dependencies);
+        Optional<MavenVersion> mavenVersion = MavenVersion.parse(version);
+        return new StandardBasicModInfo(modId, name, mavenVersion.orElse(null), description, dependencies, logo, platform);
+    }
+
+    /**
+     * Creates a {@link BasicModInfo} object from a {@link JsonObject}.
+     * <p>
+     * This method parses a JSON object, extracts the required fields (modId, displayName, version,
+     * and description), and creates a new {@link BasicModInfo} object along with any given dependencies.
+     *
+     * @param jsonObject      The {@link JsonObject} containing the mod information.
+     * @param modIdKey        The key used to retrieve the mod ID from the JSON object.
+     * @param displayNameKey  The key used to retrieve the mod display name from the JSON object.
+     * @param version         A parsed {@link Version} object
+     * @param descriptionKey  The key used to retrieve the mod description from the JSON object.
+     * @param logoFileKey     The key used to retrieve the mod icon from the JSON object.
+     * @param dependencies    The list of {@link Dependency} objects that the current mod depends on.
+     * @param breaks          The list of {@link Dependency} objects that the current mod is incompatible with.
+     *
+     *
+     * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
+     */
+    public static <T extends Version<T>> BasicModInfo createFabricModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
+                                                                                        String displayNameKey, Version<T> version,
+                                                                                        String descriptionKey, String logoFileKey, List<Dependency> dependencies,
+                                                                                        List<Dependency> breaks, List<ProvidedMod<LooseSemanticVersion>> providedMods, Platform platform) {
+        Predicate<JsonElement> isStringPredicate = element ->
+                element.isJsonPrimitive() && element.getAsJsonPrimitive().isString();
+
+        String modId = getValidString(jsonObject, modIdKey, isStringPredicate);
+        String name = getValidString(jsonObject, displayNameKey, isStringPredicate);
+        String description = getValidString(jsonObject, descriptionKey, isStringPredicate);
+        String logo = getValidString(jsonObject, logoFileKey, isStringPredicate);
+
+        return new FabricModInfo(modId, name, version, description, dependencies, logo, platform, breaks, providedMods);
+    }
+
+    /**
+     * Parses info in a forge-like way
+     * @param fileData the toml file contents
+     * @param platform the platform under which to parse (usually {@link Platform#FORGE} or {@link Platform#NEOFORGE})
+     * @return the parsed info
+     */
+    public static BasicModInfo[] parseForgelikeInfo(String fileData, Platform platform) {
+        TomlParseResult result = Toml.parse(fileData);
+        TomlArray modsArray = result.getArray("mods");
+        if(modsArray == null || modsArray.isEmpty()) return StandardBasicModInfo.emptyArray();
+
+        List<StandardBasicModInfo> parsedInfos = new ArrayList<>();
+        for (int index = 0; index < modsArray.size(); index++) {
+            TomlTable modInfo = modsArray.getTable(index);
+            if(modInfo.isEmpty()) continue;
+
+            String modId = modInfo.getString("modId");
+            String name = modInfo.getString("displayName");
+            String description = modInfo.getString("description");
+            String version = modInfo.getString("version");
+
+            List<Dependency> dependencies = new ArrayList<>();
+            TomlArray dependenciesArray = result.getArray("dependencies." + modId);
+
+            if (dependenciesArray != null && !dependenciesArray.isEmpty()) {
+                for(int i = 0; i < dependenciesArray.size(); i++) {
+                    TomlTable dependencyTable = dependenciesArray.getTable(i);
+                    if (dependencyTable != null && !dependencyTable.isEmpty()) {
+                        dependencies.add(ParserUtils.parseForgeDependency(dependencyTable));
+                    }
+                }
+            }
+
+            Optional<MavenVersion> mavenVersion = MavenVersion.parse(version);
+            parsedInfos.add(new StandardBasicModInfo(
+                    modId, name, mavenVersion.orElse(null), description,
+                    dependencies, null, platform
+            ));
+        }
+        return parsedInfos.toArray(new StandardBasicModInfo[0]);
     }
 }

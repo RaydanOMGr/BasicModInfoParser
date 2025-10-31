@@ -1,7 +1,6 @@
-package me.andreasmelone.basicmodinfoparser.dependency.fabric;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
-import me.andreasmelone.basicmodinfoparser.dependency.version.LooseSemanticVersion;
-import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +34,11 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
             if(innerContains(condition, version)) return true;
         }
         return false;
+    }
+
+    @Override
+    public Class<LooseSemanticVersion> getType() {
+        return LooseSemanticVersion.class;
     }
 
     private boolean innerContains(List<VersionCondition> conditions, LooseSemanticVersion version) {

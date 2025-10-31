@@ -1,7 +1,6 @@
-package me.andreasmelone.basicmodinfoparser.dependency.forge;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
-import me.andreasmelone.basicmodinfoparser.dependency.version.MavenVersion;
-import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +31,11 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
             if(!range.contains(version)) return false;
         }
         return true;
+    }
+
+    @Override
+    public Class<MavenVersion> getType() {
+        return MavenVersion.class;
     }
 
     @Override

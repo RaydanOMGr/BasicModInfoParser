@@ -54,8 +54,8 @@ dependencies {
 Here's a simple example demonstrating how to use `BasicModInfoParser` to extract mod information from `.jar` files:
 
 ```java
-import me.andreasmelone.basicmodinfoparser.Platform;
-import me.andreasmelone.basicmodinfoparser.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.Platform;
+import me.andreasmelone.basicmodinfoparser.platform.modinfo.StandardBasicModInfo;
 
 import java.io.File;
 import java.io.IOException;

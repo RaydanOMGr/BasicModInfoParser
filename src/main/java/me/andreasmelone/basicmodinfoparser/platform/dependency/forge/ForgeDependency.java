@@ -21,18 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser.dependency.forge;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
-import me.andreasmelone.basicmodinfoparser.dependency.StandardDependency;
-import me.andreasmelone.basicmodinfoparser.dependency.version.VersionRange;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.StandardDependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 
 import java.util.Objects;
 
-public class ForgeDependency extends StandardDependency {
+public class ForgeDependency extends StandardDependency<MavenVersion> {
     private final Ordering ordering;
     private final DependencySide side;
 
-    public ForgeDependency(String id, VersionRange<?> version, boolean mandatory, Ordering ordering, DependencySide side) {
+    public ForgeDependency(String id, VersionRange<MavenVersion> version, boolean mandatory, Ordering ordering, DependencySide side) {
         super(id, mandatory, version);
         this.ordering = ordering;
         this.side = side;

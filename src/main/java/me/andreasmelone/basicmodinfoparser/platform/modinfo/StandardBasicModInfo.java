@@ -21,38 +21,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package me.andreasmelone.basicmodinfoparser;
+package me.andreasmelone.basicmodinfoparser.platform.modinfo;
 
-import me.andreasmelone.basicmodinfoparser.dependency.Dependency;
-import me.andreasmelone.basicmodinfoparser.dependency.version.Version;
+import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.Platform;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
-public class BasicModInfo {
-    private static final BasicModInfo EMPTY = new BasicModInfo(null, null, null, null, new Dependency[0]);
-
+public class StandardBasicModInfo implements BasicModInfo {
     private final String id;
     private final String name;
     private final Version<?> version;
     private final String description;
-    private final Dependency[] dependencies;
+    private final List<Dependency> dependencies;
+    private final String iconPath;
+    private final Platform platform;
 
-    public BasicModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description,
-                        @NotNull Dependency[] dependencies) {
+    public StandardBasicModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description,
+                                @Nullable List<Dependency> dependencies, @Nullable String iconPath, @NotNull Platform platform) {
         this.id = id;
         this.name = name;
         this.version = version;
         this.description = description;
-        this.dependencies = dependencies;
+        this.dependencies = dependencies != null ? new ArrayList<>(dependencies) : null;
+        this.iconPath = iconPath;
+        this.platform = platform;
     }
 
     /**
      * The mod id, which is usually required to be ^[a-z][a-z0-9_]{1,63}$
      * @return the mod id
      */
+    @Override
     @Nullable
     public String getId() {
         return id;
@@ -62,6 +68,7 @@ public class BasicModInfo {
      * The name of the mod
      * @return the name of the mod
      */
+    @Override
     @Nullable
     public String getName() {
         return name;
@@ -71,6 +78,7 @@ public class BasicModInfo {
      * The version of the mod. In difference to {@link Dependency}, this is not a version range
      * @return the version of the mod
      */
+    @Override
     @Nullable
     public Version<?> getVersion() {
         return version;
@@ -80,6 +88,7 @@ public class BasicModInfo {
      * The mods description
      * @return the mods description
      */
+    @Override
     @Nullable
     public String getDescription() {
         return description;
@@ -90,22 +99,20 @@ public class BasicModInfo {
      * @return the mods dependencies
      * @see Dependency
      */
+    @Override
     @NotNull
-    public Dependency[] getDependencies() {
-        return dependencies;
+    public List<Dependency> getDependencies() {
+        return new ArrayList<>(dependencies);
     }
 
-    /**
-     * Whether this BasicModInfo object is empty
-     * @return whether this is empty
-     */
-    public boolean isEmpty() {
-        if(this == EMPTY) return true;
-        return id == null
-                && name == null
-                && version == null
-                && description == null
-                && (dependencies == null || dependencies.length == 0);
+    @Override
+    public @Nullable String getIconPath() {
+        return iconPath;
+    }
+
+    @Override
+    public @NotNull Platform getPlatform() {
+        return platform;
     }
 
     @Override
@@ -115,29 +122,24 @@ public class BasicModInfo {
                 ", name='" + name + '\'' +
                 ", version=" + version +
                 ", description='" + description + '\'' +
-                ", dependencies=" + Arrays.toString(dependencies) +
+                ", dependencies=" + dependencies +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        BasicModInfo that = (BasicModInfo) o;
+        StandardBasicModInfo that = (StandardBasicModInfo) o;
         return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(version, that.version) && Objects.equals(description, that.description) && Objects.deepEquals(dependencies, that.dependencies);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, version, description, Arrays.hashCode(dependencies));
+        return Objects.hash(id, name, version, description, dependencies);
     }
 
     @NotNull
-    public static BasicModInfo empty() {
-        return EMPTY;
-    }
-
-    @NotNull
-    public static BasicModInfo[] emptyArray() {
-        return new BasicModInfo[0];
+    public static StandardBasicModInfo[] emptyArray() {
+        return new StandardBasicModInfo[0];
     }
 }

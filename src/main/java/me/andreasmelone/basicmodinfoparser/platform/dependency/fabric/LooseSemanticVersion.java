@@ -1,5 +1,6 @@
-package me.andreasmelone.basicmodinfoparser.dependency.version;
+package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -111,7 +112,13 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
         int maxLength = Math.max(this.versionParts.length, other.versionParts.length);
 
         for (int i = 0; i < maxLength; i++) {
-            if(usesWildcards && wildcardPositions.contains(i)) continue;
+
+            if((usesWildcards && wildcardPositions.contains(i)) || other.usesWildcards && other.wildcardPositions.contains(i)) {
+                if (i == this.versionParts.length - 1 || i == other.versionParts.length - 1) {
+                    break;
+                }
+                continue;
+            }
 
             int thisPart = i < this.versionParts.length ? this.versionParts[i] : 0;
             int otherPart = i < other.versionParts.length ? other.versionParts[i] : 0;
@@ -222,4 +229,8 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
                 metadata, wildcards).optional();
     }
 
+    @Override
+    public Class<LooseSemanticVersion> getType() {
+        return LooseSemanticVersion.class;
+    }
 }
