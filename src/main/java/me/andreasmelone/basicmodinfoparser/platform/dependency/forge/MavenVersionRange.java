@@ -2,10 +2,7 @@ package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +41,18 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
                 "stringVersion='" + stringVersion + '\'' +
                 ", ranges=" + Arrays.toString(ranges) +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        MavenVersionRange that = (MavenVersionRange) o;
+        return Objects.equals(stringVersion, that.stringVersion) && Objects.deepEquals(ranges, that.ranges);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(stringVersion, Arrays.hashCode(ranges));
     }
 
     public static Optional<MavenVersionRange> parse(String range) {
@@ -104,6 +113,18 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
                     ", upperBound=" + upperBound +
                     ", upperExclusive=" + upperExclusive +
                     '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            Range range = (Range) o;
+            return lowerExclusive == range.lowerExclusive && upperExclusive == range.upperExclusive && Objects.equals(lowerBound, range.lowerBound) && Objects.equals(upperBound, range.upperBound);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(lowerBound, lowerExclusive, upperBound, upperExclusive);
         }
     }
 }

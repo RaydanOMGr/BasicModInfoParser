@@ -100,19 +100,19 @@ public class StandardDependency<T extends Version<T>> implements Dependency {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        StandardDependency<?> that = (StandardDependency<?>) o;
-        return mandatory == that.mandatory && Objects.equals(id, that.id) && Objects.equals(range, that.range);
-    }
-
-    @Override
     public String toString() {
         return "StandardDependency{" +
                 "id='" + id + '\'' +
                 ", mandatory=" + mandatory +
                 ", range=" + range +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        StandardDependency<?> that = (StandardDependency<?>) o;
+        return mandatory == that.mandatory && Objects.equals(id, that.id) && Objects.equals(range, that.range);
     }
 
     @Override

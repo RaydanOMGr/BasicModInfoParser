@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class FabricModInfo extends StandardBasicModInfo implements BreaksList, ProvidesList<LooseSemanticVersion> {
     private final List<Dependency> breaks;
@@ -36,5 +37,26 @@ public class FabricModInfo extends StandardBasicModInfo implements BreaksList, P
     @Override
     public Class<LooseSemanticVersion> getType() {
         return LooseSemanticVersion.class;
+    }
+
+    @Override
+    public String toString() {
+        return "FabricModInfo{" +
+                "breaks=" + breaks +
+                ", provides=" + provides +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        FabricModInfo that = (FabricModInfo) o;
+        return Objects.equals(breaks, that.breaks) && Objects.equals(provides, that.provides);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), breaks, provides);
     }
 }

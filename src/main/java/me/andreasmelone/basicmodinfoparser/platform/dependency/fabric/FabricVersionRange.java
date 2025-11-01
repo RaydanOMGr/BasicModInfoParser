@@ -2,10 +2,7 @@ package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,6 +57,18 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
                 '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        FabricVersionRange that = (FabricVersionRange) o;
+        return Objects.equals(conditions, that.conditions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(conditions);
+    }
+
     public static Optional<FabricVersionRange> parse(String... version) {
         List<List<VersionCondition>> allConditions = new ArrayList<>();
         for (String manyVersions : version) {
@@ -110,6 +119,18 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
                     "operators=" + operators +
                     ", version=" + version +
                     '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            VersionCondition that = (VersionCondition) o;
+            return Objects.equals(operators, that.operators) && Objects.equals(version, that.version);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(operators, version);
         }
 
         public boolean matches(LooseSemanticVersion version) {

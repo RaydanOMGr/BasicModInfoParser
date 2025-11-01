@@ -24,21 +24,21 @@
 package me.andreasmelone.basicmodinfoparser.standalone;
 
 import me.andreasmelone.basicmodinfoparser.jarinjar.JarInJarPlatform;
+import me.andreasmelone.basicmodinfoparser.modfile.DependencyChecker;
 import me.andreasmelone.basicmodinfoparser.modfile.ModFile;
 import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.Platform;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.PresenceStatus;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
+import me.andreasmelone.basicmodinfoparser.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.jar.JarFile;
 
 // TODO clean this up and move all this garbage to Tests
@@ -48,6 +48,7 @@ public class Main {
         assert currentFiles != null;
         List<BasicModInfo> mods = new ArrayList<>();
 
+        List<ModFile> modFiles = new ArrayList<>();
         for(File file : currentFiles) {
             if (!file.getName().endsWith(".jar") || !file.isFile()) continue;
             JarFile jar;
@@ -69,19 +70,20 @@ public class Main {
 //                    System.out.println();
 //                }
 
-                Platform[] platforms = Platform.findModPlatform(file);
-                for(Platform platform : platforms) {
-                    String infoContent = platform.getInfoFileContent(jar).orElse("");
-                    System.out.print(file.getName() + ", " + platform + ": ");
-                    for (BasicModInfo modInfo : platform.parse(infoContent)) {
-                        System.out.println(modInfo.toString());
-                        mods.add(modInfo);
-                    }
-                    System.out.println();
-                }
+//                Platform[] platforms = Platform.findModPlatform(file);
+//                for(Platform platform : platforms) {
+//                    String infoContent = platform.getInfoFileContent(jar).orElse("");
+//                    System.out.print(file.getName() + ", " + platform + ": ");
+//                    for (BasicModInfo modInfo : platform.parse(infoContent)) {
+//                        System.out.println(modInfo.toString());
+//                        mods.add(modInfo);
+//                    }
+//                    System.out.println();
+//                }
 //                ArrayDeque<ModFile> stack = new ArrayDeque<>();
 
-//                ModFile modFile = ModFile.create(file);
+                ModFile modFile = ModFile.create(file);
+                modFiles.add(modFile);
 //                System.out.println("File: " + file);
 //                System.out.println("Platform: " + Arrays.asList(modFile.getPlatforms()));
 //                System.out.println("Infos: " + Arrays.toString(modFile.getInfo()));
@@ -112,6 +114,12 @@ public class Main {
                 e.printStackTrace();
             }
         }
+
+        Pair<Boolean, Map<Dependency, PresenceStatus>> result = DependencyChecker.checkDependencies("21", "1.21.4", Platform.FABRIC.createLoaderInfo("0.17.3").get(), modFiles);
+        System.out.println("Passed: " + result.getFirst());
+        result.getSecond().forEach((k,v) -> {
+            System.out.println(k.getModId() + " (" + k.getVersionRange().getStringRepresentation() + "): " + v);
+        });
 
         for (BasicModInfo mod : mods) {
             for (Dependency dependency : mod.getDependencies()) {

@@ -1,5 +1,6 @@
 package me.andreasmelone.basicmodinfoparser.util;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class Pair<T, U> {
@@ -21,6 +22,26 @@ public class Pair<T, U> {
 
     public Optional<Pair<T, U>> optional() {
         return Optional.of(this);
+    }
+
+    @Override
+    public String toString() {
+        return "Pair{" +
+                "first=" + first +
+                ", second=" + second +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(first, second);
     }
 
     public static <T, U> Pair<T, U> of(T first, U second) {

@@ -3,10 +3,7 @@ package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -168,6 +165,18 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
                 ", buildMetadata='" + buildMetadata + '\'' +
                 ", usesWildcards=" + usesWildcards +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        LooseSemanticVersion that = (LooseSemanticVersion) o;
+        return usesWildcards == that.usesWildcards && Objects.deepEquals(versionParts, that.versionParts) && Objects.equals(wildcardPositions, that.wildcardPositions) && Objects.equals(preReleaseSuffix, that.preReleaseSuffix) && Objects.equals(preReleaseNumber, that.preReleaseNumber) && Objects.equals(buildMetadata, that.buildMetadata);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(Arrays.hashCode(versionParts), wildcardPositions, preReleaseSuffix, preReleaseNumber, buildMetadata, usesWildcards);
     }
 
     public static Optional<LooseSemanticVersion> parse(String ver) {

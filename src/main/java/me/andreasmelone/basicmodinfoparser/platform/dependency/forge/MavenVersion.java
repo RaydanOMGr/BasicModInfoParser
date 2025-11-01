@@ -4,10 +4,7 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -102,6 +99,18 @@ public class MavenVersion implements Version<MavenVersion> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        MavenVersion that = (MavenVersion) o;
+        return Objects.deepEquals(versionSegments, that.versionSegments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(versionSegments);
+    }
+
+    @Override
     public Class<MavenVersion> getType() {
         return MavenVersion.class;
     }
@@ -145,6 +154,17 @@ public class MavenVersion implements Version<MavenVersion> {
 
                 return 1;
             }
+
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof VersionSegment)) return false;
+                return compareTo((VersionSegment) o) == 0;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hashCode(number);
+            }
         }
 
         class QualifierVersionSegment implements VersionSegment {
@@ -172,6 +192,17 @@ public class MavenVersion implements Version<MavenVersion> {
                 if(other instanceof StringVersionSegment) return 1;
 
                 return -1;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof VersionSegment)) return false;
+                return compareTo((VersionSegment) o) == 0;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hashCode(qualifier);
             }
 
             public enum Qualifier {
@@ -228,6 +259,17 @@ public class MavenVersion implements Version<MavenVersion> {
                 }
 
                 return -1;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof VersionSegment)) return false;
+                return compareTo((VersionSegment) o) == 0;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hashCode(string);
             }
         }
     }

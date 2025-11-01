@@ -146,4 +146,16 @@ public class StandardModFile implements ModFile {
                 ", platforms=" + Arrays.toString(platforms) +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        StandardModFile that = (StandardModFile) o;
+        return Objects.equals(path, that.path) && Objects.deepEquals(platforms, that.platforms);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path, Arrays.hashCode(platforms));
+    }
 }

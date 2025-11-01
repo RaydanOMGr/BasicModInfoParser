@@ -117,12 +117,14 @@ public class StandardBasicModInfo implements BasicModInfo {
 
     @Override
     public String toString() {
-        return "BasicModInfo{" +
+        return "StandardBasicModInfo{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", version=" + version +
                 ", description='" + description + '\'' +
                 ", dependencies=" + dependencies +
+                ", iconPath='" + iconPath + '\'' +
+                ", platform=" + platform +
                 '}';
     }
 
@@ -130,12 +132,12 @@ public class StandardBasicModInfo implements BasicModInfo {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         StandardBasicModInfo that = (StandardBasicModInfo) o;
-        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(version, that.version) && Objects.equals(description, that.description) && Objects.deepEquals(dependencies, that.dependencies);
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(version, that.version) && Objects.equals(description, that.description) && Objects.equals(dependencies, that.dependencies) && Objects.equals(iconPath, that.iconPath) && platform == that.platform;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, version, description, dependencies);
+        return Objects.hash(id, name, version, description, dependencies, iconPath, platform);
     }
 
     @NotNull
