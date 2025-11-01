@@ -48,6 +48,11 @@ public interface ModFile {
     @NotNull
     List<ModFile> getJarInJars();
 
+    /**
+     * This method initializes all the lazily initialized fields. May take a while as it usually performs heavy IO.
+     */
+    void init();
+
     static ModFile create(File file) throws IOException {
         return StandardModFile.create(file);
     }

@@ -23,7 +23,6 @@
  */
 package me.andreasmelone.basicmodinfoparser.standalone;
 
-import me.andreasmelone.basicmodinfoparser.jarinjar.JarInJarPlatform;
 import me.andreasmelone.basicmodinfoparser.modfile.DependencyChecker;
 import me.andreasmelone.basicmodinfoparser.modfile.ModFile;
 import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
@@ -33,11 +32,8 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.PresenceStatus;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.Pair;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarFile;
 
@@ -51,13 +47,6 @@ public class Main {
         List<ModFile> modFiles = new ArrayList<>();
         for(File file : currentFiles) {
             if (!file.getName().endsWith(".jar") || !file.isFile()) continue;
-            JarFile jar;
-            try {
-                jar = new JarFile(file);
-            } catch (IOException ignored) {
-                return;
-            }
-
 
             try {
 //                JarInJarPlatform[] platforms = JarInJarPlatform.findJarInJarPlatforms(file);
@@ -115,6 +104,11 @@ public class Main {
             }
         }
 
+        long startTime = System.currentTimeMillis();
+        modFiles.parallelStream().forEach(Main::modFileConsumer);
+        System.out.println("Opening took " + (System.currentTimeMillis() - startTime) + "ms");
+        System.out.println();
+
         Pair<Boolean, Map<Dependency, PresenceStatus>> result = DependencyChecker.checkDependencies("21", "1.21.4", Platform.FABRIC.createLoaderInfo("0.17.3").get(), modFiles);
         System.out.println("Passed: " + result.getFirst());
         result.getSecond().forEach((k,v) -> {
@@ -132,5 +126,11 @@ public class Main {
                 System.out.println("\tPresent: " + dependency.isPresent(newModsList));
             }
         }
+    }
+
+    private static void modFileConsumer(ModFile modFile) {
+        modFile.getInfo();
+        modFile.getJarInJars().parallelStream().forEach(Main::modFileConsumer);
+        System.out.println("Opened modfile: " + modFile);
     }
 }

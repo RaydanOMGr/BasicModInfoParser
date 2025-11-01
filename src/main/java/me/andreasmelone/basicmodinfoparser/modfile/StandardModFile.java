@@ -105,7 +105,7 @@ public class StandardModFile implements ModFile {
                             try (InputStream in = file.getInputStream(entry);
                                  OutputStream out = new FileOutputStream(tmpFile)) {
                                 int readBytes;
-                                byte[] buffer = new byte[2048];
+                                byte[] buffer = new byte[65536]; // we're in 2025, we can allow ourselves an acceptably big buffer
                                 while((readBytes = in.read(buffer)) != -1) {
                                     out.write(buffer, 0, readBytes);
                                 }
@@ -130,6 +130,12 @@ public class StandardModFile implements ModFile {
             this.jarInJars = jars;
         }
         return jarInJars;
+    }
+
+    @Override
+    public void init() {
+        getInfo();
+        getJarInJars();
     }
 
     public static ModFile create(File path) throws IOException {
