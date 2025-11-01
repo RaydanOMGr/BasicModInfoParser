@@ -38,10 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.tomlj.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -345,7 +342,7 @@ public enum Platform {
 
         try {
             return parseFileData(toParse);
-        } catch (TomlParseError | TomlInvalidTypeException | JsonParseException e) {
+        } catch (Exception e) {
             throw new ModInfoParseException("Error parsing the mod info from the given string.", e);
         }
     }

@@ -89,11 +89,11 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
         }
 
         public boolean contains(MavenVersion version) {
-            if(lowerExclusive && version.compareTo(lowerBound) == 0) return false;
-            if(upperExclusive && version.compareTo(upperBound) == 0) return false;
+            if(lowerBound != null && lowerExclusive && version.compareTo(lowerBound) == 0) return false;
+            if(upperBound != null && upperExclusive && version.compareTo(upperBound) == 0) return false;
 
-            if(version.compareTo(lowerBound) < 0) return false;
-            return version.compareTo(upperBound) > 0;
+            if(lowerBound != null && version.compareTo(lowerBound) < 0) return false;
+            return upperBound != null &&  version.compareTo(upperBound) > 0;
         }
 
         @Override

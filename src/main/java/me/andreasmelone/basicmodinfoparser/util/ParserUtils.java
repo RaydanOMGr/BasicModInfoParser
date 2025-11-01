@@ -43,6 +43,7 @@ import org.tomlj.TomlArray;
 import org.tomlj.TomlParseResult;
 import org.tomlj.TomlTable;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -199,6 +200,9 @@ public class ParserUtils {
         String ordering = dependencyTable.getString("ordering");
         String side = dependencyTable.getString("side");
 
+        if(ordering == null) ordering = "NONE";
+        if(side == null) side = "BOTH";
+
         Optional<MavenVersionRange> range = MavenVersionRange.parse(versionRange);
         return new ForgeDependency(
                 depModId, range.orElse(null), mandatory,
@@ -331,6 +335,7 @@ public class ParserUtils {
             String name = modInfo.getString("displayName");
             String description = modInfo.getString("description");
             String version = modInfo.getString("version");
+            String logoFile = modInfo.getString("logoFile");
 
             List<Dependency> dependencies = new ArrayList<>();
             TomlArray dependenciesArray = result.getArray("dependencies." + modId);
@@ -347,9 +352,17 @@ public class ParserUtils {
             Optional<MavenVersion> mavenVersion = MavenVersion.parse(version);
             parsedInfos.add(new StandardBasicModInfo(
                     modId, name, mavenVersion.orElse(null), description,
-                    dependencies, null, platform
+                    dependencies, logoFile, platform
             ));
         }
-        return parsedInfos.toArray(new StandardBasicModInfo[0]);
+        return parsedInfos.toArray(new BasicModInfo[0]);
+    }
+
+    public static String getTempDir() {
+        return System.getProperty("java.io.tmpdir");
+    }
+
+    public static File createTempFile(String name) {
+        return new File(getTempDir(), "basicmodinfoparser_" + name);
     }
 }
