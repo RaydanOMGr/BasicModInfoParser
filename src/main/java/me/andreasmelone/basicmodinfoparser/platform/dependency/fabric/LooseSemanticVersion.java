@@ -14,6 +14,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     private static final Pattern ALPHANUMERIC = Pattern.compile("[a-zA-Z0-9_\\-.+*]+");
     private static final Pattern REGEX = Pattern.compile("^([0-9xX*]+(?:\\.[0-9xX*]+)*)(-.*?)?(\\+.+)?$", Pattern.MULTILINE);
 
+    private final String stringRepresentation;
     private final int[] versionParts;
     private final List<Integer> wildcardPositions;
     private final String preReleaseSuffix;
@@ -21,7 +22,8 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     private final String buildMetadata;
     private final boolean usesWildcards;
 
-    public LooseSemanticVersion(int[] versionParts, List<Integer> wildcardPositions, String preReleaseSuffix, Integer preReleaseNumber, String buildMetadata, boolean usesWildcards) {
+    public LooseSemanticVersion(String stringRepresentation, int[] versionParts, List<Integer> wildcardPositions, String preReleaseSuffix, Integer preReleaseNumber, String buildMetadata, boolean usesWildcards) {
+        this.stringRepresentation = stringRepresentation;
         this.versionParts = versionParts;
         this.wildcardPositions = wildcardPositions;
         this.preReleaseSuffix = preReleaseSuffix;
@@ -68,7 +70,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
         System.arraycopy(versionParts, 0, newVersionParts, 0, Math.min(versionParts.length, newLength));
         newVersionParts[index] = newAmount;
 
-        return new LooseSemanticVersion(newVersionParts, wildcardPositions, preReleaseSuffix, preReleaseNumber, buildMetadata, usesWildcards);
+        return new LooseSemanticVersion(stringRepresentation, newVersionParts, wildcardPositions, preReleaseSuffix, preReleaseNumber, buildMetadata, usesWildcards);
     }
 
     public LooseSemanticVersion increaseMajor(int amount) {
@@ -157,14 +159,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
 
     @Override
     public String toString() {
-        return "LooseSemanticVersion{" +
-                "versionParts=" + Arrays.toString(versionParts) +
-                ", wildcardPositions=" + wildcardPositions +
-                ", preReleaseSuffix='" + preReleaseSuffix + '\'' +
-                ", preReleaseNumber=" + preReleaseNumber +
-                ", buildMetadata='" + buildMetadata + '\'' +
-                ", usesWildcards=" + usesWildcards +
-                '}';
+        return getStringRepresentation();
     }
 
     @Override
@@ -232,10 +227,16 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
         }
 
         return new LooseSemanticVersion(
+                ver,
                 versionInts, wildcardPositions,
                 prerelease,
                 prereleaseNumber,
                 metadata, wildcards).optional();
+    }
+
+    @Override
+    public String getStringRepresentation() {
+        return this.stringRepresentation;
     }
 
     @Override

@@ -9,6 +9,11 @@ public interface Version<T extends Version<T>> extends Comparable<T> {
     }
 
     /**
+     * @return this version as a human-readable string
+     */
+    String getStringRepresentation();
+
+    /**
      * @return the type of {@link Version}
      */
     Class<T> getType();

@@ -17,9 +17,11 @@ public class MavenVersion implements Version<MavenVersion> {
     private static final Pattern ALPHANUMERIC = Pattern.compile("[a-zA-Z0-9_\\-.]+");
     private static final Pattern STRING_PARSER = Pattern.compile("^(\\d*)?(\\D+)(\\d*)?$");
 
+    private final String stringRepresentation;
     private final VersionSegment[] versionSegments;
 
-    public MavenVersion(VersionSegment[] versionSegments) {
+    public MavenVersion(String stringRepresentation, VersionSegment[] versionSegments) {
+        this.stringRepresentation = stringRepresentation;
         this.versionSegments = versionSegments;
     }
 
@@ -88,14 +90,12 @@ public class MavenVersion implements Version<MavenVersion> {
             }
         }
 
-        return Optional.of(new MavenVersion(segments.toArray(new VersionSegment[0])));
+        return Optional.of(new MavenVersion(version, segments.toArray(new VersionSegment[0])));
     }
 
     @Override
     public String toString() {
-        return "MavenVersion{" +
-                "versionSegments=" + Arrays.toString(versionSegments) +
-                '}';
+        return getStringRepresentation();
     }
 
     @Override
@@ -108,6 +108,11 @@ public class MavenVersion implements Version<MavenVersion> {
     @Override
     public int hashCode() {
         return Arrays.hashCode(versionSegments);
+    }
+
+    @Override
+    public String getStringRepresentation() {
+        return this.stringRepresentation;
     }
 
     @Override
