@@ -14,14 +14,18 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-public class StandardModFile implements ModFile {
+/**
+ * @deprecated very slow as it reopens the file multiple times and iterates over entries manually, should not be used unless you can't guarantee closing
+ */
+@Deprecated
+public class FileBasedModFile implements ModFile {
     private BasicModInfo[] infos;
     private List<ModFile> jarInJars;
 
     private final File path;
     private final Platform[] platforms;
 
-    private StandardModFile(File path, Platform[] platforms) {
+    private FileBasedModFile(File path, Platform[] platforms) {
         this.path = path;
         this.platforms = platforms;
     }
@@ -68,7 +72,7 @@ public class StandardModFile implements ModFile {
         }
         if(iconPath == null) return null;
 
-        ZipInputStream zipInput = new ZipInputStream(new FileInputStream(path));
+        ZipInputStream zipInput = new ZipInputStream(new BufferedInputStream(new FileInputStream(path), 65536));
         ZipEntry entry;
         while((entry = zipInput.getNextEntry()) != null) {
             if(entry.getName().equalsIgnoreCase(iconPath)) return zipInput;
@@ -138,11 +142,6 @@ public class StandardModFile implements ModFile {
         getJarInJars();
     }
 
-    public static ModFile create(File path) throws IOException {
-        Platform[] platforms = Platform.findModPlatform(path);
-        return new StandardModFile(path, platforms);
-    }
-
     @Override
     public String toString() {
         return "StandardModFile{" +
@@ -156,12 +155,21 @@ public class StandardModFile implements ModFile {
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        StandardModFile that = (StandardModFile) o;
+        FileBasedModFile that = (FileBasedModFile) o;
         return Objects.equals(path, that.path) && Objects.deepEquals(platforms, that.platforms);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(path, Arrays.hashCode(platforms));
+    }
+
+    @Override
+    public void close() throws Exception {
+    }
+
+    public static ModFile create(File path) throws IOException {
+        Platform[] platforms = Platform.findModPlatform(path);
+        return new FileBasedModFile(path, platforms);
     }
 }

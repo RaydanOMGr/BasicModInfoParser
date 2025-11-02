@@ -46,7 +46,6 @@ import java.util.jar.JarFile;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
 
@@ -358,17 +357,14 @@ public enum Platform {
      */
     @NotNull
     public Optional<String> getInfoFileContent(ZipFile zip) throws IOException {
-        try (ZipInputStream in = new ZipInputStream(new FileInputStream(zip.getName()))) {
-            ZipEntry next;
-            while ((next = in.getNextEntry()) != null) {
-                if (next.isDirectory()) continue;
-                if (comparePaths(this.infoFilePaths, next.getName())) {
-                    try (InputStream entry = zip.getInputStream(next)) {
-                        return Optional.of(readEverythingAsString(entry));
-                    }
-                }
+        for (String infoFilePath : this.infoFilePaths) {
+            ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
+            if(infoFileEntry == null) continue;
+            try(InputStream entry = zip.getInputStream(infoFileEntry)) {
+                return Optional.of(readEverythingAsString(entry));
             }
         }
+
         return Optional.empty();
     }
 
@@ -411,19 +407,32 @@ public enum Platform {
      */
     @NotNull
     public static Platform[] findModPlatform(File file) throws IOException {
-        List<Platform> platforms = new ArrayList<>();
+        Platform[] platforms;
+        try(ZipFile zipFile = new ZipFile(file)) {
+            platforms = findModPlatform(zipFile);
+        }
+        return platforms;
+    }
 
-        try (ZipInputStream in = new ZipInputStream(new FileInputStream(file))) {
-            ZipEntry next;
-            while ((next = in.getNextEntry()) != null) {
-                if (next.isDirectory()) continue;
-                for (Platform platform : Platform.values()) {
-                    if (comparePaths(platform.infoFilePaths, next.getName()))
-                        platforms.add(platform);
-                }
+    /**
+     * Finds the mod platform(s) (e.g. Forge, Fabric) by inspecting the files inside the provided mod archive.
+     * A mod can support multiple platforms, so this method can return multiple platforms.
+     *
+     * @param zip The ZipFile object of the mod jar you want to analyze
+     * @return An array of {@link Platform} values representing the platforms found in the file.
+     *         If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
+    public static Platform[] findModPlatform(ZipFile zip) throws IOException {
+        List<Platform> platforms = new ArrayList<>();
+        for (Platform platform : Platform.values()) {
+            for (String infoFilePath : platform.infoFilePaths) {
+                ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
+                if(infoFileEntry == null) continue;
+                platforms.add(platform);
+                break;
             }
         }
-
         return platforms.toArray(new Platform[0]);
     }
 }

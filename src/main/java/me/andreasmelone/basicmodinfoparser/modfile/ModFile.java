@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-public interface ModFile {
+public interface ModFile extends AutoCloseable {
     /**
      * May be lazy initialized
      * @return the {@link BasicModInfo} objects associated with this jar
@@ -54,6 +54,6 @@ public interface ModFile {
     void init();
 
     static ModFile create(File file) throws IOException {
-        return StandardModFile.create(file);
+        return ZipFileModFile.create(file);
     }
 }

@@ -7,7 +7,6 @@ import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import java.util.Optional;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
 
@@ -127,15 +125,11 @@ public enum JarInJarPlatform {
      */
     @NotNull
     public Optional<String> getMetadataFileContent(ZipFile zip) throws IOException {
-        try (ZipInputStream in = new ZipInputStream(new FileInputStream(zip.getName()))) {
-            ZipEntry next;
-            while ((next = in.getNextEntry()) != null) {
-                if (next.isDirectory()) continue;
-                if (comparePaths(this.metadataFiles, next.getName())) {
-                    try (InputStream entry = zip.getInputStream(next)) {
-                        return Optional.of(readEverythingAsString(entry));
-                    }
-                }
+        for (String infoFilePath : this.metadataFiles) {
+            ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
+            if(infoFileEntry == null) continue;
+            try(InputStream entry = zip.getInputStream(infoFileEntry)) {
+                return Optional.of(readEverythingAsString(entry));
             }
         }
         return Optional.empty();
@@ -158,19 +152,23 @@ public enum JarInJarPlatform {
      */
     @NotNull
     public static JarInJarPlatform[] findJarInJarPlatforms(File file) throws IOException {
-        List<JarInJarPlatform> platforms = new ArrayList<>();
+        JarInJarPlatform[] platforms;
+        try(ZipFile zip = new ZipFile(file)) {
+            platforms = findJarInJarPlatforms(zip);
+        }
+        return platforms;
+    }
 
-        try (ZipInputStream in = new ZipInputStream(new FileInputStream(file))) {
-            ZipEntry next;
-            while ((next = in.getNextEntry()) != null) {
-                if (next.isDirectory()) continue;
-                for (JarInJarPlatform jarInJar : JarInJarPlatform.values()) {
-                    if (comparePaths(jarInJar.metadataFiles, next.getName()))
-                        platforms.add(jarInJar);
-                }
+    public static JarInJarPlatform[] findJarInJarPlatforms(ZipFile zipFile) {
+        List<JarInJarPlatform> platforms = new ArrayList<>();
+        for (JarInJarPlatform platform : JarInJarPlatform.values()) {
+            for (String infoFilePath : platform.metadataFiles) {
+                ZipEntry infoFileEntry = zipFile.getEntry(infoFilePath);
+                if(infoFileEntry == null) continue;
+                platforms.add(platform);
+                break;
             }
         }
-
         return platforms.toArray(new JarInJarPlatform[0]);
     }
 }
