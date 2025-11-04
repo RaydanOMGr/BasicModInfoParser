@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@ public class ForgeDependency extends StandardDependency<MavenVersion> {
 
     /**
      * When the dependency must be loaded
+     *
      * @return an element of the {@link Ordering} enum, signifying when the dependency must be loaded.
      * @see Ordering
      */
@@ -49,6 +50,7 @@ public class ForgeDependency extends StandardDependency<MavenVersion> {
 
     /**
      * Where the dependency must be loaded
+     *
      * @return an element of the {@link DependencySide} enum, signifying on which side the dependency is needed.
      * @see DependencySide
      */

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -63,12 +63,12 @@ public class StandardDependency<T extends Version<T>> implements Dependency {
         for (BasicModInfo mod : mods) {
             if (mod instanceof ProvidesList) {
                 ProvidesList<?> providesList = (ProvidesList<?>) mod;
-                if(this.range == null || providesList.getType().isAssignableFrom(range.getType())) {
+                if (this.range == null || providesList.getType().isAssignableFrom(range.getType())) {
                     List<ProvidedMod<T>> innerMods = new ArrayList<>(Optional.ofNullable(((ProvidesList<T>) providesList).getProvidedIds())
                             .orElse(Collections.emptyList()));
 
                     for (ProvidedMod<T> innerMod : innerMods) {
-                        if(innerMod.getId() == null || !innerMod.getId().equalsIgnoreCase(this.getModId())) continue;
+                        if (innerMod.getId() == null || !innerMod.getId().equalsIgnoreCase(this.getModId())) continue;
 
                         if (innerMod.getVersion() == null || this.range == null || !range.getType().isInstance(mod.getVersion())) {
                             return PresenceStatus.PRESENT;
@@ -83,7 +83,7 @@ public class StandardDependency<T extends Version<T>> implements Dependency {
                 }
             }
 
-            if(mod == null || mod.getId() == null || !mod.getId().equalsIgnoreCase(this.getModId())) continue;
+            if (mod == null || mod.getId() == null || !mod.getId().equalsIgnoreCase(this.getModId())) continue;
 
             if (mod.getVersion() == null || this.range == null || !range.getType().isInstance(mod.getVersion())) {
                 return PresenceStatus.PRESENT;

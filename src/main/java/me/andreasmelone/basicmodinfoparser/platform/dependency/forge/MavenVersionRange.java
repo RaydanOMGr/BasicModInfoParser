@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024-2025 RaydanOMGr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
@@ -25,7 +48,7 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
     @Override
     public boolean contains(MavenVersion version) {
         for (Range range : ranges) {
-            if(!range.contains(version)) return false;
+            if (!range.contains(version)) return false;
         }
         return true;
     }
@@ -56,7 +79,7 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
     }
 
     public static Optional<MavenVersionRange> parse(String range) {
-        if(range == null) return Optional.empty();
+        if (range == null) return Optional.empty();
 
         List<Range> ranges = new ArrayList<>();
 
@@ -80,7 +103,7 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
             }
         }
 
-        if(ranges.isEmpty()) return Optional.empty();
+        if (ranges.isEmpty()) return Optional.empty();
         return Optional.of(new MavenVersionRange(range, ranges.toArray(new Range[0])));
     }
 
@@ -98,11 +121,11 @@ public class MavenVersionRange implements VersionRange<MavenVersion> {
         }
 
         public boolean contains(MavenVersion version) {
-            if(lowerBound != null && lowerExclusive && version.compareTo(lowerBound) == 0) return false;
-            if(upperBound != null && upperExclusive && version.compareTo(upperBound) == 0) return false;
+            if (lowerBound != null && lowerExclusive && version.compareTo(lowerBound) == 0) return false;
+            if (upperBound != null && upperExclusive && version.compareTo(upperBound) == 0) return false;
 
-            if(lowerBound != null && version.compareTo(lowerBound) < 0) return false;
-            return upperBound != null &&  version.compareTo(upperBound) > 0;
+            if (lowerBound != null && version.compareTo(lowerBound) < 0) return false;
+            return upperBound != null && version.compareTo(upperBound) > 0;
         }
 
         @Override

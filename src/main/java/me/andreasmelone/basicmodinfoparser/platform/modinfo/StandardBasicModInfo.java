@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,7 @@ public class StandardBasicModInfo implements BasicModInfo {
 
     /**
      * The mod id, which is usually required to be ^[a-z][a-z0-9_]{1,63}$
+     *
      * @return the mod id
      */
     @Override
@@ -66,6 +67,7 @@ public class StandardBasicModInfo implements BasicModInfo {
 
     /**
      * The name of the mod
+     *
      * @return the name of the mod
      */
     @Override
@@ -76,6 +78,7 @@ public class StandardBasicModInfo implements BasicModInfo {
 
     /**
      * The version of the mod. In difference to {@link Dependency}, this is not a version range
+     *
      * @return the version of the mod
      */
     @Override
@@ -86,6 +89,7 @@ public class StandardBasicModInfo implements BasicModInfo {
 
     /**
      * The mods description
+     *
      * @return the mods description
      */
     @Override
@@ -96,6 +100,7 @@ public class StandardBasicModInfo implements BasicModInfo {
 
     /**
      * The mods dependencies
+     *
      * @return the mods dependencies
      * @see Dependency
      */

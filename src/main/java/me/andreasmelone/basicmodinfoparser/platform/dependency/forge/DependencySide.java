@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,18 +43,18 @@ public enum DependencySide {
     BOTH;
 
     public DependencySide opposite() {
-        if(this == CLIENT) return SERVER;
-        if(this == SERVER) return CLIENT;
+        if (this == CLIENT) return SERVER;
+        if (this == SERVER) return CLIENT;
 
         return BOTH;
     }
 
     public static DependencySide getFromString(String side) {
-        if(side.equalsIgnoreCase("both")) {
+        if (side.equalsIgnoreCase("both")) {
             return BOTH;
-        } else if(side.equalsIgnoreCase("client")) {
+        } else if (side.equalsIgnoreCase("client")) {
             return CLIENT;
-        } else if(side.equalsIgnoreCase("server")) {
+        } else if (side.equalsIgnoreCase("server")) {
             return SERVER;
         }
 

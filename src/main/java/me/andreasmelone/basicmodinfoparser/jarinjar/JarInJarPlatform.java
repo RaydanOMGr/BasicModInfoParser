@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024-2025 RaydanOMGr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package me.andreasmelone.basicmodinfoparser.jarinjar;
 
 import com.google.gson.JsonArray;
@@ -16,7 +39,8 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
+import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.GSON;
+import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.readEverythingAsString;
 
 public enum JarInJarPlatform {
     FORGEGRADLE("META-INF/jarjar/metadata.json") {
@@ -28,16 +52,16 @@ public enum JarInJarPlatform {
             }
 
             JsonElement jarsObject = root.getAsJsonObject().get("jars");
-            if(jarsObject == null || !jarsObject.isJsonArray()) {
+            if (jarsObject == null || !jarsObject.isJsonArray()) {
                 return new ArrayList<>();
             }
 
             List<String> jars = new ArrayList<>();
             for (JsonElement el : jarsObject.getAsJsonArray()) {
-                if(!el.isJsonObject()) continue;
+                if (!el.isJsonObject()) continue;
                 JsonObject obj = el.getAsJsonObject();
                 JsonElement path = obj.get("path");
-                if(!path.isJsonPrimitive() || !path.getAsJsonPrimitive().isString()) continue;
+                if (!path.isJsonPrimitive() || !path.getAsJsonPrimitive().isString()) continue;
                 jars.add(path.getAsString());
             }
             return jars;
@@ -61,13 +85,13 @@ public enum JarInJarPlatform {
                 JsonObject jsonObject = jsonArrayElement.getAsJsonObject();
 
                 JsonElement jarsArray = jsonObject.get("jars");
-                if(jarsArray == null || !jarsArray.isJsonArray()) continue;
+                if (jarsArray == null || !jarsArray.isJsonArray()) continue;
                 for (JsonElement arrayElement : jarsArray.getAsJsonArray()) {
-                    if(!arrayElement.isJsonObject()) continue;
+                    if (!arrayElement.isJsonObject()) continue;
                     JsonObject jarObject = arrayElement.getAsJsonObject();
 
                     JsonElement path = jarObject.get("file");
-                    if(path == null || !path.isJsonPrimitive() || !path.getAsJsonPrimitive().isString()) continue;
+                    if (path == null || !path.isJsonPrimitive() || !path.getAsJsonPrimitive().isString()) continue;
                     jars.add(path.getAsString());
                 }
             }
@@ -78,16 +102,16 @@ public enum JarInJarPlatform {
         @Override
         protected @NotNull List<String> parseJarsInJar(String metadata) {
             JsonObject jsonObj = GSON.fromJson(metadata, JsonObject.class);
-            if(jsonObj == null) return new ArrayList<>();
+            if (jsonObj == null) return new ArrayList<>();
 
-            if(!jsonObj.has("quilt_loader") || !jsonObj.get("quilt_loader").isJsonObject()) return new ArrayList<>();
+            if (!jsonObj.has("quilt_loader") || !jsonObj.get("quilt_loader").isJsonObject()) return new ArrayList<>();
             JsonObject quiltLoader = jsonObj.getAsJsonObject("quilt_loader");
 
             List<String> jars = new ArrayList<>();
             JsonElement jarsArray = quiltLoader.get("jars");
-            if(jarsArray == null || !jarsArray.isJsonArray()) return new ArrayList<>();
+            if (jarsArray == null || !jarsArray.isJsonArray()) return new ArrayList<>();
             for (JsonElement str : jarsArray.getAsJsonArray()) {
-                if(!str.isJsonPrimitive() || !str.getAsJsonPrimitive().isString()) continue;
+                if (!str.isJsonPrimitive() || !str.getAsJsonPrimitive().isString()) continue;
 
                 jars.add(str.getAsString());
             }
@@ -120,15 +144,15 @@ public enum JarInJarPlatform {
      *
      * @param zip The {@link ZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
      * @return The content of the first matching info file as a string, or {@code null} if none are found.
-     *         This method reads the ZIP file once and stops searching after the first match.
+     * This method reads the ZIP file once and stops searching after the first match.
      * @throws IOException If an error occurs while reading the zip file or its entries.
      */
     @NotNull
     public Optional<String> getMetadataFileContent(ZipFile zip) throws IOException {
         for (String infoFilePath : this.metadataFiles) {
             ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
-            if(infoFileEntry == null) continue;
-            try(InputStream entry = zip.getInputStream(infoFileEntry)) {
+            if (infoFileEntry == null) continue;
+            try (InputStream entry = zip.getInputStream(infoFileEntry)) {
                 return Optional.of(readEverythingAsString(entry));
             }
         }
@@ -137,6 +161,7 @@ public enum JarInJarPlatform {
 
     /**
      * Internal method that parses the metadata file that stores information on jar in jars
+     *
      * @param metadata the metadata file content
      * @return the parsed jars
      */
@@ -153,7 +178,7 @@ public enum JarInJarPlatform {
     @NotNull
     public static JarInJarPlatform[] findJarInJarPlatforms(File file) throws IOException {
         JarInJarPlatform[] platforms;
-        try(ZipFile zip = new ZipFile(file)) {
+        try (ZipFile zip = new ZipFile(file)) {
             platforms = findJarInJarPlatforms(zip);
         }
         return platforms;
@@ -164,7 +189,7 @@ public enum JarInJarPlatform {
         for (JarInJarPlatform platform : JarInJarPlatform.values()) {
             for (String infoFilePath : platform.metadataFiles) {
                 ZipEntry infoFileEntry = zipFile.getEntry(infoFilePath);
-                if(infoFileEntry == null) continue;
+                if (infoFileEntry == null) continue;
                 platforms.add(platform);
                 break;
             }

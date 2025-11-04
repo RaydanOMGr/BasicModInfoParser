@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024-2025 RaydanOMGr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package me.andreasmelone.basicmodinfoparser.modfile;
 
 import me.andreasmelone.basicmodinfoparser.jarinjar.JarInJarPlatform;
@@ -27,12 +50,12 @@ public class ZipFileModFile implements ModFile {
 
     @Override
     public @NotNull BasicModInfo[] getInfo() throws ModInfoParseException {
-        if(infos == null) {
+        if (infos == null) {
             List<BasicModInfo> infos = new ArrayList<>();
             try {
                 for (Platform platform : this.platforms) {
                     Optional<String> content = platform.getInfoFileContent(zipFile);
-                    if(!content.isPresent()) continue;
+                    if (!content.isPresent()) continue;
                     infos.addAll(Arrays.asList(platform.parse(content.get())));
                 }
             } catch (IOException e) {
@@ -50,7 +73,7 @@ public class ZipFileModFile implements ModFile {
         List<BasicModInfo> filtered = new ArrayList<>();
 
         for (BasicModInfo info : infos) {
-            if(info.getPlatform() == platform) filtered.add(info);
+            if (info.getPlatform() == platform) filtered.add(info);
         }
 
         return filtered.toArray(new BasicModInfo[0]);
@@ -60,15 +83,15 @@ public class ZipFileModFile implements ModFile {
     public @Nullable InputStream getIconStream() throws IOException {
         String iconPath = null;
         for (BasicModInfo modInfo : this.getInfo()) {
-            if(modInfo.getIconPath() != null) {
+            if (modInfo.getIconPath() != null) {
                 iconPath = modInfo.getIconPath();
                 break;
             }
         }
-        if(iconPath == null) return null;
+        if (iconPath == null) return null;
 
         ZipEntry iconEntry = zipFile.getEntry(iconPath);
-        if(iconEntry != null) return zipFile.getInputStream(iconEntry);
+        if (iconEntry != null) return zipFile.getInputStream(iconEntry);
         return null;
     }
 
@@ -100,7 +123,7 @@ public class ZipFileModFile implements ModFile {
                              OutputStream out = new FileOutputStream(tmpFile)) {
                             int readBytes;
                             byte[] buffer = new byte[65536]; // we're in 2025, we can allow ourselves an acceptably big buffer
-                            while((readBytes = in.read(buffer)) != -1) {
+                            while ((readBytes = in.read(buffer)) != -1) {
                                 out.write(buffer, 0, readBytes);
                             }
                         }
@@ -115,7 +138,8 @@ public class ZipFileModFile implements ModFile {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (ModInfoParseException ignored) {}
+            } catch (ModInfoParseException ignored) {
+            }
 
             this.jarInJars = jars;
         }

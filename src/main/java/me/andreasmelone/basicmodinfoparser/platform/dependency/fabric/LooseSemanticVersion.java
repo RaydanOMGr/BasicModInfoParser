@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024-2025 RaydanOMGr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
@@ -37,7 +60,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     }
 
     public List<Integer> getWildcardPositions() {
-        if(!usesWildcards) return new ArrayList<>();
+        if (!usesWildcards) return new ArrayList<>();
         return new ArrayList<>(wildcardPositions);
     }
 
@@ -89,9 +112,9 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     public int compareTo(@NotNull LooseSemanticVersion other) {
         int suffixless = partComparison(other);
 
-        if(isNull(preReleaseSuffix) && isNull(other.preReleaseSuffix)) {
+        if (isNull(preReleaseSuffix) && isNull(other.preReleaseSuffix)) {
             return suffixless;
-        } else if(suffixless == 0) {
+        } else if (suffixless == 0) {
             if (isNull(preReleaseSuffix)) return 1;
             if (isNull(other.preReleaseSuffix)) return -1;
 
@@ -99,7 +122,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
 
             if (this.preReleaseNumber == null && other.preReleaseNumber != null) return -1;
             if (this.preReleaseNumber != null && other.preReleaseNumber == null) return 1;
-            if(this.preReleaseNumber != null && other.preReleaseNumber != null && suffix == 0)
+            if (this.preReleaseNumber != null && other.preReleaseNumber != null && suffix == 0)
                 return Integer.compare(this.preReleaseNumber, other.preReleaseNumber);
             return suffix;
         }
@@ -112,7 +135,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
 
         for (int i = 0; i < maxLength; i++) {
 
-            if((usesWildcards && wildcardPositions.contains(i)) || other.usesWildcards && other.wildcardPositions.contains(i)) {
+            if ((usesWildcards && wildcardPositions.contains(i)) || other.usesWildcards && other.wildcardPositions.contains(i)) {
                 if (i == this.versionParts.length - 1 || i == other.versionParts.length - 1) {
                     break;
                 }
@@ -131,7 +154,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
 
     private int suffixComparison(LooseSemanticVersion other) {
         int partComparison = partComparison(other);
-        if(partComparison != 0) return partComparison;
+        if (partComparison != 0) return partComparison;
 
         boolean isThisNumeric = isNumeric(this.preReleaseSuffix);
         boolean isOtherNumeric = isNumeric(other.preReleaseSuffix);
@@ -146,9 +169,9 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     }
 
     private boolean isNumeric(String string) {
-        if(isNull(string)) return false;
-        for(char c : string.toCharArray()) {
-            if(!Character.isDigit(c)) return false;
+        if (isNull(string)) return false;
+        for (char c : string.toCharArray()) {
+            if (!Character.isDigit(c)) return false;
         }
         return true;
     }
@@ -179,7 +202,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     }
 
     public static Optional<LooseSemanticVersion> parse(String ver, boolean wildcards) {
-        if(ver == null || ver.isEmpty() || !ALPHANUMERIC.matcher(ver).matches()) return Optional.empty();
+        if (ver == null || ver.isEmpty() || !ALPHANUMERIC.matcher(ver).matches()) return Optional.empty();
 
         Matcher matcher = REGEX.matcher(ver);
         if (!matcher.matches()) return Optional.empty();
@@ -187,11 +210,11 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
         String prerelease = matcher.group(2);
         String metadata = matcher.group(3);
 
-        if(prerelease != null && !prerelease.isEmpty()) {
+        if (prerelease != null && !prerelease.isEmpty()) {
             prerelease = prerelease.substring(1);
         }
 
-        if(metadata != null && !metadata.isEmpty()) {
+        if (metadata != null && !metadata.isEmpty()) {
             metadata = metadata.substring(1);
         }
 
@@ -201,8 +224,8 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
 
         for (int i = 0; i < splitNumbers.length; i++) {
             String num = splitNumbers[i];
-            if(num.equalsIgnoreCase("x") || num.equals("*")) {
-                if(!wildcards) return Optional.empty();
+            if (num.equalsIgnoreCase("x") || num.equals("*")) {
+                if (!wildcards) return Optional.empty();
                 versionInts[i] = 0;
                 wildcardPositions.add(i);
                 continue;
@@ -215,7 +238,7 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
         }
 
         Integer prereleaseNumber = null;
-        if(prerelease != null) {
+        if (prerelease != null) {
             String[] prereleaseSplit = prerelease.split("\\.", 2);
             if (prereleaseSplit.length > 1) {
                 try {

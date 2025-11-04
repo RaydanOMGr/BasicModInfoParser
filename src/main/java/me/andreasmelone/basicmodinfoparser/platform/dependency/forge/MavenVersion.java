@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024-2025 RaydanOMGr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.forge;
 
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
@@ -49,7 +72,7 @@ public class MavenVersion implements Version<MavenVersion> {
     }
 
     public static Optional<MavenVersion> parse(String version) {
-        if(version == null || version.isEmpty() || !ALPHANUMERIC.matcher(version).matches()) return Optional.empty();
+        if (version == null || version.isEmpty() || !ALPHANUMERIC.matcher(version).matches()) return Optional.empty();
 
         List<VersionSegment> segments = new ArrayList<>();
 
@@ -153,7 +176,7 @@ public class MavenVersion implements Version<MavenVersion> {
 
             @Override
             public int compareTo(@NotNull VersionSegment other) {
-                if(other instanceof NumberVersionSegment) {
+                if (other instanceof NumberVersionSegment) {
                     return Integer.compare(this.number, ((NumberVersionSegment) other).number);
                 }
 
@@ -190,11 +213,11 @@ public class MavenVersion implements Version<MavenVersion> {
 
             @Override
             public int compareTo(@NotNull VersionSegment other) {
-                if(other instanceof NumberVersionSegment) return -1;
-                if(other instanceof QualifierVersionSegment) {
-                    return Integer.compare(this.qualifier.ordinal(), ((QualifierVersionSegment)other).qualifier.ordinal());
+                if (other instanceof NumberVersionSegment) return -1;
+                if (other instanceof QualifierVersionSegment) {
+                    return Integer.compare(this.qualifier.ordinal(), ((QualifierVersionSegment) other).qualifier.ordinal());
                 }
-                if(other instanceof StringVersionSegment) return 1;
+                if (other instanceof StringVersionSegment) return 1;
 
                 return -1;
             }
@@ -233,7 +256,7 @@ public class MavenVersion implements Version<MavenVersion> {
                 public static Qualifier getByName(String name) {
                     for (Qualifier value : values()) {
                         for (String n : value.names) {
-                            if(n.equalsIgnoreCase(name)) return value;
+                            if (n.equalsIgnoreCase(name)) return value;
                         }
                     }
                     return null;
@@ -259,7 +282,7 @@ public class MavenVersion implements Version<MavenVersion> {
 
             @Override
             public int compareTo(@NotNull VersionSegment other) {
-                if(other instanceof StringVersionSegment) {
+                if (other instanceof StringVersionSegment) {
                     return this.string.compareToIgnoreCase(((StringVersionSegment) other).string);
                 }
 

@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024-2025 RaydanOMGr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
@@ -6,7 +29,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// TODO implement
 public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
     private static final Pattern MODIFIER_REGEX = Pattern.compile("^(>=|<=|>|<|=|\\^|~)(.+)$", Pattern.MULTILINE);
 
@@ -25,10 +47,10 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
 
     @Override
     public boolean contains(LooseSemanticVersion version) {
-        if(conditions.isEmpty()) return true;
+        if (conditions.isEmpty()) return true;
 
         for (List<VersionCondition> condition : conditions) {
-            if(innerContains(condition, version)) return true;
+            if (innerContains(condition, version)) return true;
         }
         return false;
     }
@@ -40,7 +62,7 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
 
     private boolean innerContains(List<VersionCondition> conditions, LooseSemanticVersion version) {
         for (VersionCondition condition : conditions) {
-            if(!condition.matches(version)) return false;
+            if (!condition.matches(version)) return false;
         }
         return true;
     }
@@ -78,15 +100,15 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
                 Matcher matcher = MODIFIER_REGEX.matcher(range);
                 List<Operator> operators = new ArrayList<>();
                 String versionString = range;
-                if(matcher.matches()) {
+                if (matcher.matches()) {
                     operators = Operator.getBySymbol(matcher.group(1));
                     versionString = matcher.group(2);
 
-                    if(operators == null || versionString == null || versionString.isEmpty()) continue;
+                    if (operators == null || versionString == null || versionString.isEmpty()) continue;
                 }
                 Optional<LooseSemanticVersion> parsedVersion = LooseSemanticVersion.parse(versionString, true);
-                if(!parsedVersion.isPresent()) continue;
-                if(operators.isEmpty()) operators.add(Operator.EQUALS);
+                if (!parsedVersion.isPresent()) continue;
+                if (operators.isEmpty()) operators.add(Operator.EQUALS);
 
                 versionConditions.add(new VersionCondition(operators, parsedVersion.get()));
             }
@@ -135,17 +157,17 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
 
         public boolean matches(LooseSemanticVersion version) {
             for (Operator operator : operators) {
-                if(operator == Operator.GREATER && this.version.compareTo(version) < 0) {
+                if (operator == Operator.GREATER && this.version.compareTo(version) < 0) {
                     return true;
                 }
-                if(operator == Operator.EQUALS && this.version.compareTo(version) == 0) {
+                if (operator == Operator.EQUALS && this.version.compareTo(version) == 0) {
                     return true;
                 }
-                if(operator == Operator.LESSER && this.version.compareTo(version) > 0) {
+                if (operator == Operator.LESSER && this.version.compareTo(version) > 0) {
                     return true;
                 }
 
-                if(operator == Operator.CARET || (operator == Operator.TILDE && this.version.getWildcardPositions().contains(1))) {
+                if (operator == Operator.CARET || (operator == Operator.TILDE && this.version.getWildcardPositions().contains(1))) {
                     boolean isAboveLower = this.version.compareTo(version) <= 0;
 
                     LooseSemanticVersion upperBound = this.version.increaseMajor(1);
@@ -154,7 +176,7 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
                     return isAboveLower && isBelowUpper;
                 }
 
-                if(operator == Operator.TILDE) {
+                if (operator == Operator.TILDE) {
                     boolean isAboveLower = this.version.compareTo(version) <= 0;
 
                     LooseSemanticVersion upperBound = this.version.increaseMinor(1);

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,15 +28,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.Platform;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.ProvidedMod;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.StandardDependency;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.FabricVersionRange;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.LooseSemanticVersion;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.forge.*;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.FabricModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.StandardBasicModInfo;
-import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
-import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.FabricVersionRange;
 import org.jetbrains.annotations.NotNull;
 import org.tomlj.Toml;
 import org.tomlj.TomlArray;
@@ -98,7 +98,7 @@ public class ParserUtils {
      * @param jsonObject The {@link JsonObject} in which to search for the value.
      * @param key        The key for which the value needs to be found.
      * @param predicate  The predicate that the value of the key must satisfy.
-     * @return An {@link java.util.Optional} containing the {@link JsonElement} if it exists and matches the predicate,
+     * @return An {@link Optional} containing the {@link JsonElement} if it exists and matches the predicate,
      * or a {@link Optional#empty()} if the value was not found or did not match.
      */
     public static Optional<JsonElement> findValidValue(JsonObject jsonObject, String key, Predicate<JsonElement> predicate) {
@@ -130,8 +130,8 @@ public class ParserUtils {
      * Helper method to fetch a valid string value from a {@link JsonObject}
      * by key.
      *
-     * @param obj       The {@link JsonObject} from which to retrieve the value.
-     * @param key       The key for the value to be retrieved.
+     * @param obj The {@link JsonObject} from which to retrieve the value.
+     * @param key The key for the value to be retrieved.
      * @return The string value if found and valid, or {@code null} if not found
      * or invalid.
      */
@@ -152,7 +152,7 @@ public class ParserUtils {
      * @param dependencyString The string representation of the dependency. The format is usually
      *                         "ordering:modId@version".
      * @return The parsed {@link ForgeDependency} object wrapped inside a {@link Optional}, can be {@link Optional#empty()} if invalid. Returns an {@link Optional#empty()} if the modId
-     *         is empty or invalid.
+     * is empty or invalid.
      */
     @NotNull
     public static Optional<Dependency> parseLegacyForgeDependency(String dependencyString) {
@@ -200,8 +200,8 @@ public class ParserUtils {
         String ordering = dependencyTable.getString("ordering");
         String side = dependencyTable.getString("side");
 
-        if(ordering == null) ordering = "NONE";
-        if(side == null) side = "BOTH";
+        if (ordering == null) ordering = "NONE";
+        if (side == null) side = "BOTH";
 
         Optional<MavenVersionRange> range = MavenVersionRange.parse(versionRange);
         return new ForgeDependency(
@@ -233,7 +233,7 @@ public class ParserUtils {
 
                 if (dependency.isJsonPrimitive() && dependency.getAsJsonPrimitive().isString()) {
                     Optional<FabricVersionRange> range = FabricVersionRange.parse(dependency.getAsString());
-                    if(!range.isPresent()) return;
+                    if (!range.isPresent()) return;
                     dependencyList.add(new StandardDependency<>(dependencyKey, mandatory, range.get()));
                 } else if (dependency.isJsonArray()) {
                     String[] resultingVersion = StreamSupport.stream(dependency.getAsJsonArray().spliterator(), false)
@@ -241,7 +241,7 @@ public class ParserUtils {
                             .map(JsonElement::getAsString)
                             .toArray(String[]::new);
                     Optional<FabricVersionRange> range = FabricVersionRange.parse(resultingVersion);
-                    if(!range.isPresent()) return;
+                    if (!range.isPresent()) return;
                     dependencyList.add(new StandardDependency<>(dependencyKey, mandatory, range.get()));
                 }
             });
@@ -255,15 +255,14 @@ public class ParserUtils {
      * and description), and creates a new {@link BasicModInfo} object along with any given dependencies.
      * </p>
      *
-     * @param jsonObject      The {@link JsonObject} containing the mod information.
-     * @param modIdKey        The key used to retrieve the mod ID from the JSON object.
-     * @param displayNameKey  The key used to retrieve the mod display name from the JSON object.
-     * @param versionKey      The key used to retrieve the mod version from the JSON object.
-     * @param descriptionKey  The key used to retrieve the mod description from the JSON object.
-     * @param logoFileKey     The key used to retrieve the mod icon from the JSON object.
-     * @param dependencies    The list of {@link Dependency} objects that the current mod depends on.
-     * @param platform        The platform the mod is on.
-     *
+     * @param jsonObject     The {@link JsonObject} containing the mod information.
+     * @param modIdKey       The key used to retrieve the mod ID from the JSON object.
+     * @param displayNameKey The key used to retrieve the mod display name from the JSON object.
+     * @param versionKey     The key used to retrieve the mod version from the JSON object.
+     * @param descriptionKey The key used to retrieve the mod description from the JSON object.
+     * @param logoFileKey    The key used to retrieve the mod icon from the JSON object.
+     * @param dependencies   The list of {@link Dependency} objects that the current mod depends on.
+     * @param platform       The platform the mod is on.
      * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
      */
     public static BasicModInfo createForgeModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
@@ -288,16 +287,14 @@ public class ParserUtils {
      * This method parses a JSON object, extracts the required fields (modId, displayName, version,
      * and description), and creates a new {@link BasicModInfo} object along with any given dependencies.
      *
-     * @param jsonObject      The {@link JsonObject} containing the mod information.
-     * @param modIdKey        The key used to retrieve the mod ID from the JSON object.
-     * @param displayNameKey  The key used to retrieve the mod display name from the JSON object.
-     * @param version         A parsed {@link Version} object
-     * @param descriptionKey  The key used to retrieve the mod description from the JSON object.
-     * @param logoFileKey     The key used to retrieve the mod icon from the JSON object.
-     * @param dependencies    The list of {@link Dependency} objects that the current mod depends on.
-     * @param breaks          The list of {@link Dependency} objects that the current mod is incompatible with.
-     *
-     *
+     * @param jsonObject     The {@link JsonObject} containing the mod information.
+     * @param modIdKey       The key used to retrieve the mod ID from the JSON object.
+     * @param displayNameKey The key used to retrieve the mod display name from the JSON object.
+     * @param version        A parsed {@link Version} object
+     * @param descriptionKey The key used to retrieve the mod description from the JSON object.
+     * @param logoFileKey    The key used to retrieve the mod icon from the JSON object.
+     * @param dependencies   The list of {@link Dependency} objects that the current mod depends on.
+     * @param breaks         The list of {@link Dependency} objects that the current mod is incompatible with.
      * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
      */
     public static <T extends Version<T>> BasicModInfo createFabricModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
@@ -317,6 +314,7 @@ public class ParserUtils {
 
     /**
      * Parses info in a forge-like way
+     *
      * @param fileData the toml file contents
      * @param platform the platform under which to parse (usually {@link Platform#FORGE} or {@link Platform#NEOFORGE})
      * @return the parsed info
@@ -324,12 +322,12 @@ public class ParserUtils {
     public static BasicModInfo[] parseForgelikeInfo(String fileData, Platform platform) {
         TomlParseResult result = Toml.parse(fileData);
         TomlArray modsArray = result.getArray("mods");
-        if(modsArray == null || modsArray.isEmpty()) return StandardBasicModInfo.emptyArray();
+        if (modsArray == null || modsArray.isEmpty()) return StandardBasicModInfo.emptyArray();
 
         List<StandardBasicModInfo> parsedInfos = new ArrayList<>();
         for (int index = 0; index < modsArray.size(); index++) {
             TomlTable modInfo = modsArray.getTable(index);
-            if(modInfo.isEmpty()) continue;
+            if (modInfo.isEmpty()) continue;
 
             String modId = modInfo.getString("modId");
             String name = modInfo.getString("displayName");
@@ -341,7 +339,7 @@ public class ParserUtils {
             TomlArray dependenciesArray = result.getArray("dependencies." + modId);
 
             if (dependenciesArray != null && !dependenciesArray.isEmpty()) {
-                for(int i = 0; i < dependenciesArray.size(); i++) {
+                for (int i = 0; i < dependenciesArray.size(); i++) {
                     TomlTable dependencyTable = dependenciesArray.getTable(i);
                     if (dependencyTable != null && !dependencyTable.isEmpty()) {
                         dependencies.add(ParserUtils.parseForgeDependency(dependencyTable));

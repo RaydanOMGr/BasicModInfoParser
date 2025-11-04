@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,8 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.PresenceStatus;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.Pair;
 
-import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 // TODO clean this up and move all this garbage to Tests
@@ -51,7 +49,7 @@ public class Main {
         long startTime = System.currentTimeMillis();
         List<ModFile> modFiles = new ArrayList<>();
         Arrays.stream(currentFiles).forEach(file -> {
-            if(!file.isFile() || !file.getName().endsWith(".jar")) return;
+            if (!file.isFile() || !file.getName().endsWith(".jar")) return;
             try {
                 ModFile modFile = ModFile.create(file);
                 modFiles.add(modFile);
@@ -74,7 +72,7 @@ public class Main {
         Pair<Boolean, Map<Dependency, PresenceStatus>> result = DependencyChecker.checkDependencies("21", "1.21.1", Platform.NEOFORGE.createLoaderInfo("21.1.211").get(), modFiles);
         System.out.println("Dependency check took " + (System.currentTimeMillis() - startTime) + "ms");
         System.out.println("Passed: " + result.getFirst());
-        result.getSecond().forEach((k,v) -> {
+        result.getSecond().forEach((k, v) -> {
             String versionRep = k.getVersionRange() != null ? " (" + k.getVersionRange().getStringRepresentation() + ")" : "";
             System.out.println(k.getModId() + versionRep + ": " + v);
         });
@@ -93,7 +91,8 @@ public class Main {
                 mod.getPlatform().createLoaderInfo(null).ifPresent(newModsList::add);
 
                 System.out.println("Dependency " + dependency.getModId() + " for " + mod.getId() + ": ");
-                if(dependency.getVersionRange() != null) System.out.println("\tRequired version: " + dependency.getVersionRange().getStringRepresentation());
+                if (dependency.getVersionRange() != null)
+                    System.out.println("\tRequired version: " + dependency.getVersionRange().getStringRepresentation());
                 System.out.println("\tMandatory: " + dependency.isMandatory());
                 System.out.println("\tPresent: " + dependency.isPresent(newModsList));
             }

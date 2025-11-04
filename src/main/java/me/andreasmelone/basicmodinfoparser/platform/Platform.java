@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,9 @@
  */
 package me.andreasmelone.basicmodinfoparser.platform;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.ProvidedMod;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.StandardDependency;
@@ -36,9 +38,10 @@ import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.ParserUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.tomlj.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +50,6 @@ import java.util.jar.JarFile;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
 
@@ -65,7 +67,7 @@ public enum Platform {
 
             List<BasicModInfo> parsedInfos = new ArrayList<>();
             for (JsonElement topArrayElement : topArray) {
-                if(!topArrayElement.isJsonObject()) continue;
+                if (!topArrayElement.isJsonObject()) continue;
                 JsonObject modObject = topArrayElement.getAsJsonObject();
                 List<Dependency> dependencyList = new ArrayList<>();
                 if (modObject.has("dependencies") && modObject.get("dependencies").isJsonArray()) {
@@ -154,7 +156,7 @@ public enum Platform {
 
             List<BasicModInfo> parsedInfos = new ArrayList<>();
             for (JsonElement jsonArrayElement : jsonArray) {
-                if(!jsonArrayElement.isJsonObject()) continue;
+                if (!jsonArrayElement.isJsonObject()) continue;
                 JsonObject jsonObject = jsonArrayElement.getAsJsonObject();
 
                 Optional<LooseSemanticVersion> version = LooseSemanticVersion.parse(getValidString(jsonObject, "version"));
@@ -165,7 +167,7 @@ public enum Platform {
                 List<Dependency> breaksList = new ArrayList<>();
                 ParserUtils.parseFabricDependencies(breaksList, jsonObject, "breaks", true);
                 List<ProvidedMod<LooseSemanticVersion>> provided = new ArrayList<>();
-                if(jsonObject.has("provides") && jsonObject.get("provides").isJsonArray()) {
+                if (jsonObject.has("provides") && jsonObject.get("provides").isJsonArray()) {
                     for (JsonElement dependency : jsonObject.getAsJsonArray("provides")) {
                         if (!dependency.isJsonPrimitive() || !dependency.getAsJsonPrimitive().isString()) continue;
                         provided.add(new ProvidedMod<>(dependency.getAsString(), version.orElse(null)));
@@ -201,9 +203,10 @@ public enum Platform {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             JsonObject jsonObj = GSON.fromJson(fileData, JsonObject.class);
-            if(jsonObj == null) return StandardBasicModInfo.emptyArray();
+            if (jsonObj == null) return StandardBasicModInfo.emptyArray();
 
-            if(!jsonObj.has("quilt_loader") || !jsonObj.get("quilt_loader").isJsonObject()) return StandardBasicModInfo.emptyArray();
+            if (!jsonObj.has("quilt_loader") || !jsonObj.get("quilt_loader").isJsonObject())
+                return StandardBasicModInfo.emptyArray();
             JsonObject quiltLoader = jsonObj.getAsJsonObject("quilt_loader");
             String modId = getValidString(quiltLoader, "id");
             String version = getValidString(quiltLoader, "version");
@@ -211,7 +214,7 @@ public enum Platform {
             String name = null;
             String description = null;
             String iconPath = null;
-            if(quiltLoader.has("metadata") && quiltLoader.get("metadata").isJsonObject()) {
+            if (quiltLoader.has("metadata") && quiltLoader.get("metadata").isJsonObject()) {
                 JsonObject metadata = quiltLoader.getAsJsonObject("metadata");
                 name = getValidString(metadata, "name");
                 description = getValidString(metadata, "description");
@@ -219,20 +222,20 @@ public enum Platform {
             }
 
             List<Dependency> dependencies = new ArrayList<>();
-            if(quiltLoader.has("depends") && quiltLoader.get("depends").isJsonArray()) {
+            if (quiltLoader.has("depends") && quiltLoader.get("depends").isJsonArray()) {
                 for (JsonElement dependency : quiltLoader.getAsJsonArray("depends")) {
-                    if(!dependency.isJsonObject()) continue;
+                    if (!dependency.isJsonObject()) continue;
                     JsonObject dependencyObject = dependency.getAsJsonObject();
                     String dependencyId = getValidString(dependencyObject, "id");
                     boolean isMandatory = true;
-                    if(dependencyObject.has("optional")
+                    if (dependencyObject.has("optional")
                             && dependencyObject.get("optional").isJsonPrimitive()
                             && dependencyObject.get("optional").getAsJsonPrimitive().isString()) {
                         isMandatory = !dependencyObject.get("optional").getAsBoolean();
                     }
-                    String[] versions = new String[] { "*" };
+                    String[] versions = new String[]{"*"};
 
-                    if(dependencyObject.has("versions")) {
+                    if (dependencyObject.has("versions")) {
                         JsonElement dependencyVersion = dependencyObject.get("versions");
                         if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
                             versions[0] = dependencyVersion.getAsString();
@@ -250,15 +253,15 @@ public enum Platform {
             }
 
             List<Dependency> breaks = new ArrayList<>();
-            if(quiltLoader.has("breaks") && quiltLoader.get("breaks").isJsonArray()) {
+            if (quiltLoader.has("breaks") && quiltLoader.get("breaks").isJsonArray()) {
                 for (JsonElement dependency : quiltLoader.getAsJsonArray("breaks")) {
-                    if(!dependency.isJsonObject()) continue;
+                    if (!dependency.isJsonObject()) continue;
                     JsonObject dependencyObject = dependency.getAsJsonObject();
                     String dependencyId = getValidString(dependencyObject, "id");
                     boolean isMandatory = true;
-                    String[] versions = new String[] { "*" };
+                    String[] versions = new String[]{"*"};
 
-                    if(dependencyObject.has("versions")) {
+                    if (dependencyObject.has("versions")) {
                         JsonElement dependencyVersion = dependencyObject.get("versions");
                         if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
                             versions[0] = dependencyVersion.getAsString();
@@ -276,14 +279,14 @@ public enum Platform {
             }
 
             List<ProvidedMod<LooseSemanticVersion>> provides = new ArrayList<>();
-            if(quiltLoader.has("provides") && quiltLoader.get("provides").isJsonArray()) {
+            if (quiltLoader.has("provides") && quiltLoader.get("provides").isJsonArray()) {
                 for (JsonElement dependency : quiltLoader.getAsJsonArray("provides")) {
-                    if(!dependency.isJsonObject()) continue;
+                    if (!dependency.isJsonObject()) continue;
                     JsonObject dependencyObject = dependency.getAsJsonObject();
                     String dependencyId = getValidString(dependencyObject, "id");
                     String providedVersion = version;
 
-                    if(dependencyObject.has("versions")) {
+                    if (dependencyObject.has("versions")) {
                         JsonElement dependencyVersion = dependencyObject.get("versions");
                         if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
                             providedVersion = dependencyVersion.getAsString();
@@ -296,7 +299,7 @@ public enum Platform {
             }
 
             Optional<LooseSemanticVersion> semanticVersion = LooseSemanticVersion.parse(version, false);
-            return new BasicModInfo[] {
+            return new BasicModInfo[]{
                     new FabricModInfo(modId, name,
                             semanticVersion.orElse(null),
                             description, dependencies, iconPath, this,
@@ -337,7 +340,7 @@ public enum Platform {
      *                This string must match the format required by the platform; otherwise, parsing will fail.
      * @return An array of {@link BasicModInfo} objects containing mod information. Each object represents one specified mod namespace in the modinfo file.
      * @throws IllegalArgumentException If the input string is null.
-     * @throws ModInfoParseException If an error occurs while parsing the mod info file due to invalid formatting, missing fields, or an unexpected data structure.
+     * @throws ModInfoParseException    If an error occurs while parsing the mod info file due to invalid formatting, missing fields, or an unexpected data structure.
      */
     @NotNull
     public BasicModInfo[] parse(String toParse) {
@@ -358,15 +361,15 @@ public enum Platform {
      *
      * @param zip The {@link ZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
      * @return The content of the first matching info file as a string, or {@code null} if none are found.
-     *         This method reads the ZIP file once and stops searching after the first match.
+     * This method reads the ZIP file once and stops searching after the first match.
      * @throws IOException If an error occurs while reading the zip file or its entries.
      */
     @NotNull
     public Optional<String> getInfoFileContent(ZipFile zip) throws IOException {
         for (String infoFilePath : this.infoFilePaths) {
             ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
-            if(infoFileEntry == null) continue;
-            try(InputStream entry = zip.getInputStream(infoFileEntry)) {
+            if (infoFileEntry == null) continue;
+            try (InputStream entry = zip.getInputStream(infoFileEntry)) {
                 return Optional.of(readEverythingAsString(entry));
             }
         }
@@ -396,6 +399,7 @@ public enum Platform {
 
     /**
      * Internal method for creating a {@link BasicModInfo} object with loader info.
+     *
      * @param loaderVersion the version of the given loader
      * @return the created object
      */
@@ -408,13 +412,13 @@ public enum Platform {
      *
      * @param file The mod file, which must be a zip archive (e.g., .jar, .zip) or a similar format.
      * @return An array of {@link Platform} values representing the platforms found in the file.
-     *         If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
+     * If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
      * @throws IOException If the file is not a valid zip archive or an I/O error occurs while reading the file.
      */
     @NotNull
     public static Platform[] findModPlatform(File file) throws IOException {
         Platform[] platforms;
-        try(ZipFile zipFile = new ZipFile(file)) {
+        try (ZipFile zipFile = new ZipFile(file)) {
             platforms = findModPlatform(zipFile);
         }
         return platforms;
@@ -426,7 +430,7 @@ public enum Platform {
      *
      * @param zip The ZipFile object of the mod jar you want to analyze
      * @return An array of {@link Platform} values representing the platforms found in the file.
-     *         If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
+     * If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
      * @throws IOException If an I/O error occurs while reading the file.
      */
     public static Platform[] findModPlatform(ZipFile zip) throws IOException {
@@ -434,7 +438,7 @@ public enum Platform {
         for (Platform platform : Platform.values()) {
             for (String infoFilePath : platform.infoFilePaths) {
                 ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
-                if(infoFileEntry == null) continue;
+                if (infoFileEntry == null) continue;
                 platforms.add(platform);
                 break;
             }

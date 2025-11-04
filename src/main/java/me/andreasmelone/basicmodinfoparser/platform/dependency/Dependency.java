@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,18 +33,21 @@ import java.util.List;
 public interface Dependency {
     /**
      * The ID of the dependency mod
+     *
      * @return The id of the dependency mod
      */
     String getModId();
 
     /**
      * The required version of this dependency, parsed as a {@link VersionRange}
+     *
      * @return The version range
      */
     VersionRange<?> getVersionRange();
 
     /**
      * Whether the dependency is required for the mod to run or not.
+     *
      * @return whether the dependency is mandatory (needed to run the mod)
      */
     boolean isMandatory();

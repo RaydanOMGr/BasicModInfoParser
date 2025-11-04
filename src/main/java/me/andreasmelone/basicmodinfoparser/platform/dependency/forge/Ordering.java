@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 RaydanOMGr
+ * Copyright (c) 2024-2025 RaydanOMGr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,7 @@ public enum Ordering {
         if (ordering.equalsIgnoreCase("before")
                 || ordering.equalsIgnoreCase("required-before")) {
             return Ordering.BEFORE;
-        } else if(ordering.equalsIgnoreCase("after")
+        } else if (ordering.equalsIgnoreCase("after")
                 || ordering.equalsIgnoreCase("required-after")) {
             return Ordering.AFTER;
         }
