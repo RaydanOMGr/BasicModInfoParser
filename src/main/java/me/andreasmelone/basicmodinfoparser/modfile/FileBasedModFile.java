@@ -22,8 +22,8 @@ public class FileBasedModFile implements ModFile {
     private BasicModInfo[] infos;
     private List<ModFile> jarInJars;
 
-    private final File path;
     private final Platform[] platforms;
+    private transient final File path;
 
     private FileBasedModFile(File path, Platform[] platforms) {
         this.path = path;

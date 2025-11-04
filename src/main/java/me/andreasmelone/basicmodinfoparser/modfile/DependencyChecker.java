@@ -49,7 +49,7 @@ public class DependencyChecker {
 
         Deque<ModFile> stack = new ArrayDeque<>(modFiles);
 
-        infos.add(javaInfo);
+        if(javaInfo != null) infos.add(javaInfo);
         infos.add(gameInfo);
         infos.add(loaderInfo);
         while(!stack.isEmpty()) {

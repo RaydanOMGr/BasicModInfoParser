@@ -40,12 +40,14 @@ import org.tomlj.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarFile;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
 
@@ -322,6 +324,10 @@ public enum Platform {
 
     private Platform(String... infoFilePaths) {
         this.infoFilePaths = infoFilePaths;
+    }
+
+    public String[] getInfoFilePaths() {
+        return Arrays.copyOf(this.infoFilePaths, this.infoFilePaths.length);
     }
 
     /**

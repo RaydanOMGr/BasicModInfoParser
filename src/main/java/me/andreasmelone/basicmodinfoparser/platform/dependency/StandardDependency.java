@@ -83,7 +83,7 @@ public class StandardDependency<T extends Version<T>> implements Dependency {
                 }
             }
 
-            if(mod.getId() == null || !mod.getId().equalsIgnoreCase(this.getModId())) continue;
+            if(mod == null || mod.getId() == null || !mod.getId().equalsIgnoreCase(this.getModId())) continue;
 
             if (mod.getVersion() == null || this.range == null || !range.getType().isInstance(mod.getVersion())) {
                 return PresenceStatus.PRESENT;

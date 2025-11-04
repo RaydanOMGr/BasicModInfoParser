@@ -17,10 +17,10 @@ public class ZipFileModFile implements ModFile {
     private BasicModInfo[] infos;
     private List<ModFile> jarInJars;
 
-    private final ZipFile zipFile;
     private final Platform[] platforms;
+    private transient final ZipFile zipFile;
 
-    public ZipFileModFile(ZipFile zipFile, Platform[] platforms) {
+    private ZipFileModFile(ZipFile zipFile, Platform[] platforms) {
         this.zipFile = zipFile;
         this.platforms = platforms;
     }
