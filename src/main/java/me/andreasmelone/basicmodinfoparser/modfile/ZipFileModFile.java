@@ -23,6 +23,9 @@
  */
 package me.andreasmelone.basicmodinfoparser.modfile;
 
+import me.andreasmelone.abstractzip.IZipEntry;
+import me.andreasmelone.abstractzip.IZipFile;
+import me.andreasmelone.abstractzip.IZipFileFactory;
 import me.andreasmelone.basicmodinfoparser.jarinjar.JarInJarPlatform;
 import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.Platform;
@@ -33,17 +36,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class ZipFileModFile implements ModFile {
     private BasicModInfo[] infos;
     private List<ModFile> jarInJars;
 
     private final Platform[] platforms;
-    private transient final ZipFile zipFile;
+    private transient final IZipFile zipFile;
 
-    private ZipFileModFile(ZipFile zipFile, Platform[] platforms) {
+    private ZipFileModFile(IZipFile zipFile, Platform[] platforms) {
         this.zipFile = zipFile;
         this.platforms = platforms;
     }
@@ -90,8 +91,8 @@ public class ZipFileModFile implements ModFile {
         }
         if (iconPath == null) return null;
 
-        ZipEntry iconEntry = zipFile.getEntry(iconPath);
-        if (iconEntry != null) return zipFile.getInputStream(iconEntry);
+        IZipEntry iconEntry = zipFile.findEntry(iconPath);
+        if (iconEntry != null) return zipFile.openEntry(iconEntry);
         return null;
     }
 
@@ -111,7 +112,7 @@ public class ZipFileModFile implements ModFile {
                     List<String> innerJars = jarInJar.getJarsInJar(content);
 
                     for (String inJarPath : innerJars) {
-                        ZipEntry entry = zipFile.getEntry(inJarPath);
+                        IZipEntry entry = zipFile.findEntry(inJarPath);
                         if (entry == null) {
                             continue;
                         }
@@ -119,7 +120,7 @@ public class ZipFileModFile implements ModFile {
                         File tmpFile = ParserUtils.createTempFile(UUID.randomUUID() + ".jar");
                         tmpFile.deleteOnExit();
 
-                        try (InputStream in = zipFile.getInputStream(entry);
+                        try (InputStream in = zipFile.openEntry(entry);
                              OutputStream out = new FileOutputStream(tmpFile)) {
                             int readBytes;
                             byte[] buffer = new byte[65536]; // we're in 2025, we can allow ourselves an acceptably big buffer
@@ -179,12 +180,12 @@ public class ZipFileModFile implements ModFile {
         return Objects.hash(Arrays.hashCode(infos), jarInJars, zipFile, Arrays.hashCode(platforms));
     }
 
-    public static ModFile create(ZipFile zipFile) throws IOException {
+    public static ModFile create(IZipFile zipFile) throws IOException {
         Platform[] platforms = Platform.findModPlatform(zipFile);
         return new ZipFileModFile(zipFile, platforms);
     }
 
     public static ModFile create(File path) throws IOException {
-        return create(new ZipFile(path));
+        return create(IZipFileFactory.Provider.create(path));
     }
 }

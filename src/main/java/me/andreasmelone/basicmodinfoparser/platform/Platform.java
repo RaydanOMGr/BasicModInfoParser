@@ -26,6 +26,9 @@ package me.andreasmelone.basicmodinfoparser.platform;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import me.andreasmelone.abstractzip.IZipEntry;
+import me.andreasmelone.abstractzip.IZipFile;
+import me.andreasmelone.abstractzip.IZipFileFactory;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.ProvidedMod;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.StandardDependency;
@@ -46,10 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.jar.JarFile;
 import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
 
@@ -359,17 +359,18 @@ public enum Platform {
     /**
      * Reads and returns the content of the platform-specific info file (e.g. {@code mcmod.info}, {@code mods.toml}, etc.) from a zip archive.
      *
-     * @param zip The {@link ZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
+     * @param zip The {@link IZipFile} to search for the platform-specific info file.
      * @return The content of the first matching info file as a string, or {@code null} if none are found.
      * This method reads the ZIP file once and stops searching after the first match.
      * @throws IOException If an error occurs while reading the zip file or its entries.
      */
     @NotNull
-    public Optional<String> getInfoFileContent(ZipFile zip) throws IOException {
+    public Optional<String> getInfoFileContent(IZipFile zip) throws IOException {
         for (String infoFilePath : this.infoFilePaths) {
-            ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
+            IZipEntry infoFileEntry = zip.findEntry(infoFilePath);
             if (infoFileEntry == null) continue;
-            try (InputStream entry = zip.getInputStream(infoFileEntry)) {
+            try (InputStream entry = zip.openEntry(infoFileEntry)) {
+                if(entry == null) return Optional.empty();
                 return Optional.of(readEverythingAsString(entry));
             }
         }
@@ -418,7 +419,7 @@ public enum Platform {
     @NotNull
     public static Platform[] findModPlatform(File file) throws IOException {
         Platform[] platforms;
-        try (ZipFile zipFile = new ZipFile(file)) {
+        try (IZipFile zipFile = IZipFileFactory.Provider.create(file)) {
             platforms = findModPlatform(zipFile);
         }
         return platforms;
@@ -433,11 +434,11 @@ public enum Platform {
      * If a mod supports multiple platforms (e.g., Forge and Fabric), both will be included.
      * @throws IOException If an I/O error occurs while reading the file.
      */
-    public static Platform[] findModPlatform(ZipFile zip) throws IOException {
+    public static Platform[] findModPlatform(IZipFile zip) throws IOException {
         List<Platform> platforms = new ArrayList<>();
         for (Platform platform : Platform.values()) {
             for (String infoFilePath : platform.infoFilePaths) {
-                ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
+                IZipEntry infoFileEntry = zip.findEntry(infoFilePath);
                 if (infoFileEntry == null) continue;
                 platforms.add(platform);
                 break;

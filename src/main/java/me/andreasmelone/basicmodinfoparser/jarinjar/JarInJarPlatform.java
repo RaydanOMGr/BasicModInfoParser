@@ -26,6 +26,9 @@ package me.andreasmelone.basicmodinfoparser.jarinjar;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import me.andreasmelone.abstractzip.IZipEntry;
+import me.andreasmelone.abstractzip.IZipFile;
+import me.andreasmelone.abstractzip.IZipFileFactory;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,8 +39,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.GSON;
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.readEverythingAsString;
@@ -142,17 +143,17 @@ public enum JarInJarPlatform {
     /**
      * Reads and returns the content of the platform-specific metadata file (e.g. {@code metadata.json}, {@code fabric.mod.json}, etc.) from a zip archive.
      *
-     * @param zip The {@link ZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
+     * @param zip The {@link IZipFile} to search for the platform-specific info file. It is allowed to be a derivative of such, e.g. {@link JarFile}
      * @return The content of the first matching info file as a string, or {@code null} if none are found.
      * This method reads the ZIP file once and stops searching after the first match.
      * @throws IOException If an error occurs while reading the zip file or its entries.
      */
     @NotNull
-    public Optional<String> getMetadataFileContent(ZipFile zip) throws IOException {
+    public Optional<String> getMetadataFileContent(IZipFile zip) throws IOException {
         for (String infoFilePath : this.metadataFiles) {
-            ZipEntry infoFileEntry = zip.getEntry(infoFilePath);
+            IZipEntry infoFileEntry = zip.findEntry(infoFilePath);
             if (infoFileEntry == null) continue;
-            try (InputStream entry = zip.getInputStream(infoFileEntry)) {
+            try (InputStream entry = zip.openEntry(infoFileEntry)) {
                 return Optional.of(readEverythingAsString(entry));
             }
         }
@@ -178,17 +179,17 @@ public enum JarInJarPlatform {
     @NotNull
     public static JarInJarPlatform[] findJarInJarPlatforms(File file) throws IOException {
         JarInJarPlatform[] platforms;
-        try (ZipFile zip = new ZipFile(file)) {
+        try (IZipFile zip = IZipFileFactory.Provider.create(file)) {
             platforms = findJarInJarPlatforms(zip);
         }
         return platforms;
     }
 
-    public static JarInJarPlatform[] findJarInJarPlatforms(ZipFile zipFile) {
+    public static JarInJarPlatform[] findJarInJarPlatforms(IZipFile zipFile) {
         List<JarInJarPlatform> platforms = new ArrayList<>();
         for (JarInJarPlatform platform : JarInJarPlatform.values()) {
             for (String infoFilePath : platform.metadataFiles) {
-                ZipEntry infoFileEntry = zipFile.getEntry(infoFilePath);
+                IZipEntry infoFileEntry = zipFile.findEntry(infoFilePath);
                 if (infoFileEntry == null) continue;
                 platforms.add(platform);
                 break;
