@@ -10,7 +10,7 @@ public interface IZipFileFactory {
     IZipFile create(File path) throws IOException;
 
     class Provider {
-        public static IZipFileFactory DEFAULT_FACTORY = new JvmZipFileFactory();
+        public static final IZipFileFactory DEFAULT_FACTORY = new JvmZipFileFactory();
         private static IZipFileFactory FACTORY = DEFAULT_FACTORY;
 
         // if somebody calls this with null as the factoryImpl I will die
