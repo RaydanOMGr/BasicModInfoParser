@@ -265,9 +265,16 @@ public class ParserUtils {
      * @param platform       The platform the mod is on.
      * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
      */
-    public static BasicModInfo createForgeModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
-                                                                String displayNameKey, String versionKey,
-                                                                String descriptionKey, String logoFileKey, List<Dependency> dependencies, Platform platform) {
+    public static BasicModInfo createForgeModInfoFromJsonObject(
+            JsonObject jsonObject,
+            String modIdKey,
+            String displayNameKey,
+            String versionKey,
+            String descriptionKey,
+            String logoFileKey,
+            List<Dependency> dependencies,
+            Platform platform
+    ) {
         Predicate<JsonElement> isStringPredicate = element ->
                 element.isJsonPrimitive() && element.getAsJsonPrimitive().isString();
 
@@ -297,10 +304,18 @@ public class ParserUtils {
      * @param breaks         The list of {@link Dependency} objects that the current mod is incompatible with.
      * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
      */
-    public static <T extends Version<T>> BasicModInfo createFabricModInfoFromJsonObject(JsonObject jsonObject, String modIdKey,
-                                                                                        String displayNameKey, Version<T> version,
-                                                                                        String descriptionKey, String logoFileKey, List<Dependency> dependencies,
-                                                                                        List<Dependency> breaks, List<ProvidedMod<LooseSemanticVersion>> providedMods, Platform platform) {
+    public static <T extends Version<T>> BasicModInfo createFabricModInfoFromJsonObject(
+            JsonObject jsonObject,
+            String modIdKey,
+            String displayNameKey,
+            Version<T> version,
+            String descriptionKey,
+            String logoFileKey,
+            List<Dependency> dependencies,
+            List<Dependency> breaks,
+            List<ProvidedMod<LooseSemanticVersion>> providedMods,
+            Platform platform
+    ) {
         Predicate<JsonElement> isStringPredicate = element ->
                 element.isJsonPrimitive() && element.getAsJsonPrimitive().isString();
 

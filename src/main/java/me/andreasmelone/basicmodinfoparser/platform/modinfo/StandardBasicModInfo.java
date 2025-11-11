@@ -43,8 +43,15 @@ public class StandardBasicModInfo implements BasicModInfo {
     private final String iconPath;
     private final Platform platform;
 
-    public StandardBasicModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description,
-                                @Nullable List<Dependency> dependencies, @Nullable String iconPath, @NotNull Platform platform) {
+    public StandardBasicModInfo(
+            @Nullable String id,
+            @Nullable String name,
+            @Nullable Version<?> version,
+            @Nullable String description,
+            @Nullable List<Dependency> dependencies,
+            @Nullable String iconPath,
+            @NotNull Platform platform
+    ) {
         this.id = id;
         this.name = name;
         this.version = version;
