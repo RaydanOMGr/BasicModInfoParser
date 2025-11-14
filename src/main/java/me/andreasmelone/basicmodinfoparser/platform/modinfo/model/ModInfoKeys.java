@@ -13,19 +13,22 @@ public class ModInfoKeys {
     public final String versionKey;
     public final String descriptionKey;
     public final String logoFileKey;
+    public final String[] dependencyKeys;
 
     public ModInfoKeys(
             String modIdKey,
             String displayNameKey,
             String versionKey,
             String descriptionKey,
-            String logoFileKey
+            String logoFileKey,
+            String[] dependencyKeys
     ) {
         this.modIdKey = modIdKey;
         this.displayNameKey = displayNameKey;
         this.versionKey = versionKey;
         this.descriptionKey = descriptionKey;
         this.logoFileKey = logoFileKey;
+        this.dependencyKeys = dependencyKeys;
     }
 
     /**
@@ -39,7 +42,8 @@ public class ModInfoKeys {
                 "displayName",
                 "version",
                 "description",
-                "logoFile"
+                "logoFile",
+                new String[]{"dependencies"}
         );
     }
 
@@ -54,7 +58,12 @@ public class ModInfoKeys {
                 "name",
                 "version",
                 "description",
-                "icon"
+                "icon",
+                new String[]{
+                        "depends",
+                        "breaks",
+                        "provides"
+                }
         );
     }
 
