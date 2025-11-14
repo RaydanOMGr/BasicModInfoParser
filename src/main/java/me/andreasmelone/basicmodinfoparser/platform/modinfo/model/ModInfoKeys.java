@@ -3,16 +3,44 @@ package me.andreasmelone.basicmodinfoparser.platform.modinfo.model;
 import java.util.Objects;
 
 /**
- * Holds information about the available keys inside a mod's information file and their respective names.
+ * Holds information about the available keys inside a mod's information file.
  *
  * @see me.andreasmelone.basicmodinfoparser.platform.Platform
  */
 public class ModInfoKeys {
+    /**
+     * The key name to access a mod's ID.
+     */
     public final String modIdKey;
+
+    /**
+     * The key name to access a mod's display name.
+     */
     public final String displayNameKey;
+
+    /**
+     * The key name to access a mod's version.
+     */
     public final String versionKey;
+
+    /**
+     * The key name to access a mod's description.
+     */
     public final String descriptionKey;
+
+    /**
+     * The key name to access a mod's logo.
+     */
     public final String logoFileKey;
+
+    /**
+     * The key names to access a mod's dependencies. Loaders such as Fabric may provide multiple
+     * keys to declare dependencies and compatibility, so an array is necessary.
+     *
+     * @see <a href="https://wiki.fabricmc.net/documentation:fabric_mod_json">
+     * Fabric's documentation on dependency management
+     * </a>
+     */
     public final String[] dependencyKeys;
 
     public ModInfoKeys(
@@ -61,8 +89,10 @@ public class ModInfoKeys {
                 "icon",
                 new String[]{
                         "depends",
+                        "recommends",
+                        "suggests",
                         "breaks",
-                        "provides"
+                        "conflicts"
                 }
         );
     }
