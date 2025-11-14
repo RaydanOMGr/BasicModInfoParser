@@ -37,6 +37,7 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.LooseSeman
 import me.andreasmelone.basicmodinfoparser.platform.dependency.forge.MavenVersion;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.FabricModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.StandardBasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.modinfo.model.ModInfoKeys;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.ParserUtils;
 import org.jetbrains.annotations.NotNull;
@@ -51,13 +52,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import static me.andreasmelone.basicmodinfoparser.platform.modinfo.model.ModInfoKeys.fabricKeys;
+import static me.andreasmelone.basicmodinfoparser.platform.modinfo.model.ModInfoKeys.forgeKeys;
 import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
 
 public enum Platform {
     /**
      * Legacy Forge platform, which uses the {@code mcmod.info} file containing JSON data.
      */
-    FORGE_LEGACY("mcmod.info") {
+    FORGE_LEGACY(
+            new ModInfoKeys(
+                    "modid",
+                    "name",
+                    "version",
+                    "description",
+                    "logoFile"
+            ),
+            "mcmod.info"
+    ) {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             JsonArray topArray = GSON.fromJson(fileData, JsonArray.class);
@@ -96,7 +108,7 @@ public enum Platform {
     /**
      * Forge platform, which uses the {@code mods.toml} file with TOML data.
      */
-    FORGE("META-INF/mods.toml") {
+    FORGE(forgeKeys(), "META-INF/mods.toml") {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             return ParserUtils.parseForgelikeInfo(fileData, this);
@@ -119,7 +131,7 @@ public enum Platform {
     /**
      * NeoForge platform, which uses the {@code neoforge.mods.toml} file with TOML data, similarly to {@link Platform#FORGE}.
      */
-    NEOFORGE("META-INF/neoforge.mods.toml") {
+    NEOFORGE(forgeKeys(), "META-INF/neoforge.mods.toml") {
         @Override
         protected @NotNull BasicModInfo[] parseFileData(String fileData) {
             return ParserUtils.parseForgelikeInfo(fileData, this);
@@ -142,7 +154,7 @@ public enum Platform {
     /**
      * Fabric platform, which uses the {@code fabric.mod.json} file. As the extension suggests, it stores data in JSON format.
      */
-    FABRIC("fabric.mod.json") {
+    FABRIC(fabricKeys(), "fabric.mod.json") {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             JsonElement root = GSON.fromJson(fileData, JsonElement.class);
@@ -199,7 +211,7 @@ public enum Platform {
     /**
      * Quilt platform, which uses the {@code quilt.mod.json} file. As the extensions suggests, it stores data in the JSON format.
      */
-    QUILT("quilt.mod.json") {
+    QUILT(fabricKeys(), "quilt.mod.json") {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             JsonObject jsonObj = GSON.fromJson(fileData, JsonObject.class);
@@ -323,9 +335,12 @@ public enum Platform {
         }
     };
 
+    protected final ModInfoKeys modInfoKeys;
+
     private final String[] infoFilePaths;
 
-    private Platform(String... infoFilePaths) {
+    Platform(ModInfoKeys modInfoKeys, String... infoFilePaths) {
+        this.modInfoKeys = modInfoKeys;
         this.infoFilePaths = infoFilePaths;
     }
 
