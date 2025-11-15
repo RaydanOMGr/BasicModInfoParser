@@ -24,6 +24,7 @@
 package me.andreasmelone.basicmodinfoparser.util;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import me.andreasmelone.basicmodinfoparser.platform.BasicModInfo;
@@ -37,6 +38,7 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.forge.*;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.FabricModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.StandardBasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.modinfo.model.ModInfoKeys;
 import org.jetbrains.annotations.NotNull;
 import org.tomlj.Toml;
 import org.tomlj.TomlArray;
@@ -48,9 +50,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
@@ -139,6 +140,93 @@ public class ParserUtils {
         return findValidValue(obj, key, (element) -> true)
                 .map(JsonElement::getAsString)
                 .orElse(null);
+    }
+
+    /**
+     * Creates a {@link BasicModInfo} object from a {@link JsonObject}.
+     * <p>
+     * This method parses a JSON object, extracts the required fields (modId, displayName, version,
+     * and description), and creates a new {@link BasicModInfo} object along with any given dependencies.
+     * </p>
+     *
+     * @param modObject          The {@link JsonObject} containing the mod information.
+     * @param platform           The {@link Platform} this mod info belongs to.
+     * @param dependenciesParser A {@link BiFunction} that takes an array of dependency keys and the
+     *                           {@link JsonObject} to parse dependencies from, returning a list of {@link Dependency}.
+     * @return A {@link BasicModInfo} object containing the mod information and its dependencies.
+     */
+    public static BasicModInfo createModInfoFrom(
+            @NotNull JsonObject modObject,
+            @NotNull Platform platform,
+            @NotNull BiFunction<String[], JsonObject, List<Dependency>> dependenciesParser
+    ) {
+        // Get miscellaneous information
+        final ModInfoKeys modInfoKeys = platform.getModInfoKeys();
+        final Predicate<JsonElement> isStringPredicate = element -> element.isJsonPrimitive() && element.getAsJsonPrimitive()
+                .isString();
+        String modId = getValidString(modObject, modInfoKeys.modIdKey);
+        String name = getValidString(modObject, modInfoKeys.displayNameKey, isStringPredicate);
+        String description = getValidString(modObject, modInfoKeys.descriptionKey, isStringPredicate);
+        String version = getValidString(modObject, modInfoKeys.versionKey, isStringPredicate);
+        String logo = getValidString(modObject, modInfoKeys.logoFileKey, isStringPredicate);
+        Optional<MavenVersion> mavenVersion = MavenVersion.parse(version);
+
+        // Get authors
+        ArrayList<String> authorsList = new ArrayList<>();
+        if (modObject.has(modInfoKeys.authorsKey)) {
+            JsonArray authorsJson = modObject.getAsJsonArray(modInfoKeys.authorsKey);
+            authorsList.ensureCapacity(authorsJson.size());
+
+            for (JsonElement element : authorsJson) {
+                if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString())
+                    authorsList.add(element.getAsString());
+            }
+        }
+
+        // Get dependencies
+        List<Dependency> dependencyList = dependenciesParser.apply(
+                modInfoKeys.dependencyKeys,
+                modObject
+        );
+
+        return new StandardBasicModInfo(
+                modId,
+                name,
+                mavenVersion.orElse(null),
+                description,
+                dependencyList,
+                logo,
+                platform,
+                authorsList
+        );
+    }
+
+    /**
+     * Parses all the dependencies that are present in {@code modObject} and that are under the
+     * given {@code dependencyKeys}.
+     *
+     * @param dependencyKeys The keys under which the dependencies are located in the {@code modObject}.
+     * @param modObject      The {@link JsonObject} containing the mod's information.
+     * @return A list of {@link Dependency} objects representing the parsed dependencies.
+     */
+    public static List<Dependency> parseLegacyForgeDependencies(String[] dependencyKeys, JsonObject modObject) {
+        List<Dependency> dependencies = new ArrayList<>();
+        for (String dependencyKey : dependencyKeys) {
+            // If no key is found, we continue
+            if (!modObject.has(dependencyKey) || !modObject.get(dependencyKey).isJsonArray()) {
+                continue;
+            }
+
+            JsonArray dependenciesArray = modObject.getAsJsonArray();
+            for (JsonElement element : dependenciesArray) {
+                // Not a string = continue
+                if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) continue;
+                Optional<Dependency> dependency = parseLegacyForgeDependency(element.getAsString());
+                dependency.ifPresent(dependencies::add);
+            }
+        }
+
+        return dependencies;
     }
 
     /**

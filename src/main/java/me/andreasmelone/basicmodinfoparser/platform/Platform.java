@@ -66,7 +66,9 @@ public enum Platform {
                     "name",
                     "version",
                     "description",
-                    "logoFile"
+                    "logoFile",
+                    "authors",
+                    new String[]{"dependencies"}
             ),
             "mcmod.info"
     ) {
@@ -385,7 +387,7 @@ public enum Platform {
             IZipEntry infoFileEntry = zip.findEntry(infoFilePath);
             if (infoFileEntry == null) continue;
             try (InputStream entry = zip.openEntry(infoFileEntry)) {
-                if(entry == null) return Optional.empty();
+                if (entry == null) return Optional.empty();
                 return Optional.of(readEverythingAsString(entry));
             }
         }

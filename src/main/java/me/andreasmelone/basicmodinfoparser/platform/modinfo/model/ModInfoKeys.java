@@ -33,6 +33,8 @@ public class ModInfoKeys {
      */
     public final String logoFileKey;
 
+    public final String authorsKey;
+
     /**
      * The key names to access a mod's dependencies. Loaders such as Fabric may provide multiple
      * keys to declare dependencies and compatibility, so an array is necessary.
@@ -49,6 +51,7 @@ public class ModInfoKeys {
             String versionKey,
             String descriptionKey,
             String logoFileKey,
+            String authorsKey,
             String[] dependencyKeys
     ) {
         this.modIdKey = modIdKey;
@@ -56,6 +59,7 @@ public class ModInfoKeys {
         this.versionKey = versionKey;
         this.descriptionKey = descriptionKey;
         this.logoFileKey = logoFileKey;
+        this.authorsKey = authorsKey;
         this.dependencyKeys = dependencyKeys;
     }
 
@@ -71,6 +75,7 @@ public class ModInfoKeys {
                 "version",
                 "description",
                 "logoFile",
+                "authors",
                 new String[]{"dependencies"}
         );
     }
@@ -87,6 +92,7 @@ public class ModInfoKeys {
                 "version",
                 "description",
                 "icon",
+                "authors",
                 new String[]{
                         "depends",
                         "recommends",
