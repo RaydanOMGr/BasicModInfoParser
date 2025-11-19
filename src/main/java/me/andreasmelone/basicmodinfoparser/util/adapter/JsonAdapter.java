@@ -38,40 +38,35 @@ import java.util.function.Function;
  * provides a standardized way to access data from a JSON structure, allowing
  * for consistent data retrieval regardless of the underlying format.
  */
-public class JsonAdapter implements DataAdapter<JsonObject, JsonArray> {
-    private final JsonObject jsonObject;
-
+public class JsonAdapter extends DataAdapter<JsonObject, JsonArray> {
     /**
      * Constructs a {@link JsonAdapter} with the given {@link JsonObject}.
      *
      * @param jsonObject The JSON object to adapt.
      */
     public JsonAdapter(JsonObject jsonObject) {
-        this.jsonObject = jsonObject;
+        super(jsonObject);
     }
 
     @Override
     public Optional<String> getString(String key) {
-        if (jsonObject.has(key) && jsonObject.get(key).isJsonPrimitive()) {
-            return Optional.of(jsonObject.get(key).getAsString());
-        }
-        return Optional.empty();
+        return getElement(key)
+                .filter(JsonElement::isJsonPrimitive)
+                .map(JsonElement::getAsString);
     }
 
     @Override
     public Optional<Boolean> getBoolean(String key) {
-        if (jsonObject.has(key) && jsonObject.get(key).isJsonPrimitive()) {
-            return Optional.of(jsonObject.get(key).getAsBoolean());
-        }
-        return Optional.empty();
+        return getElement(key)
+                .filter(JsonElement::isJsonPrimitive)
+                .map(JsonElement::getAsBoolean);
     }
 
     @Override
     public Optional<JsonArray> getArray(String key) {
-        if (jsonObject.has(key) && jsonObject.get(key).isJsonArray()) {
-            return Optional.of(jsonObject.getAsJsonArray(key));
-        }
-        return Optional.empty();
+        return getElement(key)
+                .filter(JsonElement::isJsonArray)
+                .map(JsonElement::getAsJsonArray);
     }
 
     @Override
@@ -88,13 +83,8 @@ public class JsonAdapter implements DataAdapter<JsonObject, JsonArray> {
     }
 
     @Override
-    public boolean has(String key) {
-        return jsonObject.has(key);
-    }
-
-    @Override
-    public JsonObject getBackingObject() {
-        return jsonObject;
+    public boolean hasKey(String key) {
+        return getElement(key).isPresent();
     }
 
     @Override
@@ -113,9 +103,9 @@ public class JsonAdapter implements DataAdapter<JsonObject, JsonArray> {
         // The first two ways of representing author names are interchangeable in Fabric,
         // so an array could have both types at the same time!
 
-        if (!has(key)) return Collections.emptyList();
+        if (!hasKey(key)) return Collections.emptyList();
 
-        JsonElement element = jsonObject.get(key);
+        JsonElement element = backingObject.get(key);
         List<String> result = new ArrayList<>();
 
         if (!element.isJsonArray() && !element.isJsonObject()) return Collections.emptyList();
@@ -150,5 +140,29 @@ public class JsonAdapter implements DataAdapter<JsonObject, JsonArray> {
         }
 
         return result;
+    }
+
+    /**
+     * Retrieves a {@link JsonElement} from the backing {@link JsonObject} based on the given key.
+     * The key can be a dot-separated path to access nested elements.
+     *
+     * @param key The key or path to the element.
+     * @return An {@link Optional} containing the {@link JsonElement} if found, otherwise empty.
+     */
+    private Optional<JsonElement> getElement(String key) {
+        String[] parts = key.split("\\.");
+        JsonElement current = backingObject;
+
+        for (String part : parts) {
+            if (current == null || !current.isJsonObject()) {
+                return Optional.empty();
+            }
+            JsonObject obj = current.getAsJsonObject();
+            if (!obj.has(part)) {
+                return Optional.empty();
+            }
+            current = obj.get(part);
+        }
+        return Optional.ofNullable(current);
     }
 }

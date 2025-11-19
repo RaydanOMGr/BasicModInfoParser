@@ -29,21 +29,33 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * An adapter interface for standardizing access to data from different sources,
+ * An abstract class for standardizing access to data from different sources,
  * such as JSON or TOML. This allows for a unified way of retrieving values,
  * regardless of the underlying data format.
  *
  * @param <T> The type of the underlying data source (e.g., JsonObject, TomlTable).
  * @param <A> The type of the array-like data structure in the source (e.g., JsonArray, TomlArray).
  */
-public interface DataAdapter<T, A> {
+public abstract class DataAdapter<T, A> {
+    /**
+     * The underlying data source object.
+     */
+    protected T backingObject;
+
+    /**
+     * Constructs a new {@code DataAdapter} with the given backing object.
+     */
+    public DataAdapter(T backingObject) {
+        this.backingObject = backingObject;
+    }
+
     /**
      * Retrieves a string value for a given key.
      *
      * @param key The key to look up.
      * @return An {@link Optional} containing the string value, or empty if not found.
      */
-    Optional<String> getString(String key);
+    public abstract Optional<String> getString(String key);
 
     /**
      * Retrieves a boolean value for a given key.
@@ -51,7 +63,7 @@ public interface DataAdapter<T, A> {
      * @param key The key to look up.
      * @return An {@link Optional} containing the boolean value, or empty if not found.
      */
-    Optional<Boolean> getBoolean(String key);
+    public abstract Optional<Boolean> getBoolean(String key);
 
     /**
      * Retrieves an array-like data structure for a given key.
@@ -59,17 +71,7 @@ public interface DataAdapter<T, A> {
      * @param key The key to look up.
      * @return An {@link Optional} containing the array-like data, or empty if not found.
      */
-    Optional<A> getArray(String key);
-
-    /**
-     * Retrieves a list of objects from an array-like data structure.
-     *
-     * @param key    The key of the array to retrieve.
-     * @param mapper A function to map each element of the array to the desired object type.
-     * @param <V>    The type of the objects in the resulting list.
-     * @return A {@link List} of mapped objects, or an empty list if the array is not found.
-     */
-    <V> List<V> getList(String key, Function<DataAdapter<T, A>, V> mapper);
+    public abstract Optional<A> getArray(String key);
 
     /**
      * Checks if a value for the given key exists.
@@ -77,14 +79,16 @@ public interface DataAdapter<T, A> {
      * @param key The key to check.
      * @return {@code true} if the key exists, otherwise {@code false}.
      */
-    boolean has(String key);
+    public abstract boolean hasKey(String key);
 
     /**
      * Returns the underlying data source object.
      *
      * @return The raw data source object.
      */
-    T getBackingObject();
+    public T getBackingObject() {
+        return backingObject;
+    }
 
     /**
      * Retrieves a list of strings from a key that can be either a single string or an array of strings.
@@ -92,7 +96,7 @@ public interface DataAdapter<T, A> {
      * @param key The key to look up.
      * @return A {@link List} of strings, or an empty list if not found.
      */
-    default List<String> getListOrString(String key) {
+    public List<String> getListOrString(String key) {
         return Collections.emptyList();
     }
 }

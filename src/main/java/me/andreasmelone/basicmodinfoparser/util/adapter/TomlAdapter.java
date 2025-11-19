@@ -38,60 +38,34 @@ import java.util.stream.Collectors;
  * provides a standardized way to access data from a TOML structure, allowing
  * for consistent data retrieval regardless of the underlying format.
  */
-public class TomlAdapter implements DataAdapter<TomlTable, TomlArray> {
-    private final TomlTable tomlTable;
-
-    /**
-     * Constructs a {@link TomlAdapter} with the given {@link TomlTable}.
-     *
-     * @param tomlTable The TOML table to adapt.
-     */
-    public TomlAdapter(TomlTable tomlTable) {
-        this.tomlTable = tomlTable;
+public class TomlAdapter extends DataAdapter<TomlTable, TomlArray> {
+    public TomlAdapter(TomlTable backingObject) {
+        super(backingObject);
     }
 
     @Override
     public Optional<String> getString(String key) {
-        return Optional.ofNullable(tomlTable.getString(key));
+        return Optional.ofNullable(backingObject.getString(key));
     }
 
     @Override
     public Optional<Boolean> getBoolean(String key) {
-        return Optional.ofNullable(tomlTable.getBoolean(key));
+        return Optional.ofNullable(backingObject.getBoolean(key));
     }
 
     @Override
     public Optional<TomlArray> getArray(String key) {
-        return Optional.ofNullable(tomlTable.getArray(key));
+        return Optional.ofNullable(backingObject.getArray(key));
     }
 
     @Override
-    public <V> List<V> getList(String key, Function<DataAdapter<TomlTable, TomlArray>, V> mapper) {
-        List<V> list = new ArrayList<>();
-        getArray(key).ifPresent(array -> {
-            for (int i = 0; i < array.size(); i++) {
-                TomlTable table = array.getTable(i);
-                if (table != null) {
-                    list.add(mapper.apply(new TomlAdapter(table)));
-                }
-            }
-        });
-        return list;
-    }
-
-    @Override
-    public boolean has(String key) {
-        return tomlTable.contains(key);
-    }
-
-    @Override
-    public TomlTable getBackingObject() {
-        return tomlTable;
+    public boolean hasKey(String key) {
+        return backingObject.contains(key);
     }
 
     @Override
     public List<String> getListOrString(String key) {
-        if (!has(key)) {
+        if (!hasKey(key)) {
             return Collections.emptyList();
         }
 
