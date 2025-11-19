@@ -138,11 +138,6 @@ public class MavenVersion implements Version<MavenVersion> {
         return this.stringRepresentation;
     }
 
-    @Override
-    public Class<MavenVersion> getType() {
-        return MavenVersion.class;
-    }
-
     public interface VersionSegment extends Comparable<VersionSegment> {
         default boolean isEqual(@NotNull VersionSegment other) {
             return this.compareTo(other) == 0;
