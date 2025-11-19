@@ -25,14 +25,23 @@ package me.andreasmelone.basicmodinfoparser.platform.dependency.version;
 
 import java.util.Optional;
 
-public interface Version<T extends Version<T>> extends Comparable<T> {
-    @SuppressWarnings("unchecked")
-    default Optional<T> optional() {
-        return Optional.of((T) this);
+public abstract class Version implements Comparable<Version> {
+    protected String stringRepresentation;
+
+    public Version() { /* Empty Constructor */ }
+
+    protected Version(String stringRepresentation) {
+        this.stringRepresentation = stringRepresentation;
+    }
+
+    public abstract Optional<Version> parse(String versionString);
+
+    public Optional<Version> optional() {
+        return Optional.of(this);
     }
 
     /**
      * @return this version as a human-readable string
      */
-    String getStringRepresentation();
+    public abstract String getStringRepresentation();
 }

@@ -23,6 +23,7 @@
  */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
+import me.andreasmelone.basicmodinfoparser.platform.dependency.forge.MavenVersion;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,20 +34,21 @@ import java.util.regex.Pattern;
 /**
  * Represents a looser version of the SemVer 2.0, which is accepted by fabric
  */
-public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
+public class LooseSemanticVersion extends Version {
     private static final Pattern ALPHANUMERIC = Pattern.compile("[a-zA-Z0-9_\\-.+*]+");
     private static final Pattern REGEX = Pattern.compile("^([0-9xX*]+(?:\\.[0-9xX*]+)*)(-.*?)?(\\+.+)?$", Pattern.MULTILINE);
 
-    private final String stringRepresentation;
-    private final int[] versionParts;
-    private final List<Integer> wildcardPositions;
-    private final String preReleaseSuffix;
-    private final Integer preReleaseNumber;
-    private final String buildMetadata;
-    private final boolean usesWildcards;
+    private int[] versionParts;
+    private List<Integer> wildcardPositions;
+    private String preReleaseSuffix;
+    private Integer preReleaseNumber;
+    private String buildMetadata;
+    private boolean usesWildcards;
 
-    public LooseSemanticVersion(String stringRepresentation, int[] versionParts, List<Integer> wildcardPositions, String preReleaseSuffix, Integer preReleaseNumber, String buildMetadata, boolean usesWildcards) {
-        this.stringRepresentation = stringRepresentation;
+    public LooseSemanticVersion() { /* Empty constructor */ }
+
+    private LooseSemanticVersion(String stringRepresentation, int[] versionParts, List<Integer> wildcardPositions, String preReleaseSuffix, Integer preReleaseNumber, String buildMetadata, boolean usesWildcards) {
+        super(stringRepresentation);
         this.versionParts = versionParts;
         this.wildcardPositions = wildcardPositions;
         this.preReleaseSuffix = preReleaseSuffix;
@@ -109,21 +111,26 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
     }
 
     @Override
-    public int compareTo(@NotNull LooseSemanticVersion other) {
-        int suffixless = partComparison(other);
+    public int compareTo(@NotNull Version other) {
+        if (!(other instanceof LooseSemanticVersion)) {
+            return -1;
+        }
 
-        if (isNull(preReleaseSuffix) && isNull(other.preReleaseSuffix)) {
+        LooseSemanticVersion castOther = (LooseSemanticVersion) other;
+        int suffixless = partComparison(castOther);
+
+        if (isNull(preReleaseSuffix) && isNull(castOther.preReleaseSuffix)) {
             return suffixless;
         } else if (suffixless == 0) {
             if (isNull(preReleaseSuffix)) return 1;
-            if (isNull(other.preReleaseSuffix)) return -1;
+            if (isNull(castOther.preReleaseSuffix)) return -1;
 
-            int suffix = suffixComparison(other);
+            int suffix = suffixComparison(castOther);
 
-            if (this.preReleaseNumber == null && other.preReleaseNumber != null) return -1;
-            if (this.preReleaseNumber != null && other.preReleaseNumber == null) return 1;
-            if (this.preReleaseNumber != null && other.preReleaseNumber != null && suffix == 0)
-                return Integer.compare(this.preReleaseNumber, other.preReleaseNumber);
+            if (this.preReleaseNumber == null && castOther.preReleaseNumber != null) return -1;
+            if (this.preReleaseNumber != null && castOther.preReleaseNumber == null) return 1;
+            if (this.preReleaseNumber != null && castOther.preReleaseNumber != null && suffix == 0)
+                return Integer.compare(this.preReleaseNumber, castOther.preReleaseNumber);
             return suffix;
         }
 
@@ -197,11 +204,12 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
         return Objects.hash(Arrays.hashCode(versionParts), wildcardPositions, preReleaseSuffix, preReleaseNumber, buildMetadata, usesWildcards);
     }
 
-    public static Optional<LooseSemanticVersion> parse(String ver) {
-        return parse(ver, false);
+    @Override
+    public Optional<Version> parse(String versionString) {
+        return parse(versionString, false);
     }
 
-    public static Optional<LooseSemanticVersion> parse(String ver, boolean wildcards) {
+    public Optional<Version> parse(String ver, boolean wildcards) {
         if (ver == null || ver.isEmpty() || !ALPHANUMERIC.matcher(ver).matches()) return Optional.empty();
 
         Matcher matcher = REGEX.matcher(ver);
@@ -249,21 +257,18 @@ public class LooseSemanticVersion implements Version<LooseSemanticVersion> {
             }
         }
 
-        return new LooseSemanticVersion(
-                ver,
-                versionInts, wildcardPositions,
-                prerelease,
-                prereleaseNumber,
-                metadata, wildcards).optional();
+        this.wildcardPositions = wildcardPositions;
+        this.preReleaseSuffix = prerelease;
+        this.preReleaseNumber = prereleaseNumber;
+        this.buildMetadata = metadata;
+        this.versionParts = versionInts;
+        this.usesWildcards = wildcards;
+
+        return Optional.of(this);
     }
 
     @Override
     public String getStringRepresentation() {
         return this.stringRepresentation;
-    }
-
-    @Override
-    public Class<LooseSemanticVersion> getType() {
-        return LooseSemanticVersion.class;
     }
 }
