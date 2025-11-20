@@ -26,11 +26,9 @@ package me.andreasmelone.basicmodinfoparser.util.adapter;
 import org.tomlj.TomlArray;
 import org.tomlj.TomlTable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +65,10 @@ public class TomlAdapter extends DataAdapter<TomlTable, TomlArray> {
     public List<String> getListOrString(String key) {
         if (!hasKey(key)) {
             return Collections.emptyList();
+        }
+
+        if (backingObject.isString(key)) {
+            return Collections.singletonList(backingObject.getString(key));
         }
 
         Optional<TomlArray> arrayOptional = getArray(key);
