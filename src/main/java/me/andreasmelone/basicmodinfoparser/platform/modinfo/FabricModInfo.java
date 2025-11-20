@@ -35,9 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class FabricModInfo extends StandardBasicModInfo implements BreaksList, ProvidesList<LooseSemanticVersion> {
-    private final List<Dependency> breaks;
-    private final List<ProvidedMod<LooseSemanticVersion>> provides;
+public class FabricModInfo extends StandardBasicModInfo implements ProvidesList<LooseSemanticVersion> {
+    private final List<ProvidedMod> provides;
 
     public FabricModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description, @Nullable List<Dependency> dependencies, @Nullable String iconPath, @NotNull Platform platform, @Nullable List<Dependency> breaks, @Nullable List<ProvidedMod<LooseSemanticVersion>> provides) {
         super(id, name, version, description, dependencies, iconPath, platform);
@@ -46,13 +45,7 @@ public class FabricModInfo extends StandardBasicModInfo implements BreaksList, P
     }
 
     @Override
-    public List<Dependency> getBreaks() {
-        if (breaks == null) return null;
-        return new ArrayList<>(breaks);
-    }
-
-    @Override
-    public List<ProvidedMod<LooseSemanticVersion>> getProvidedIds() {
+    public List<ProvidedMod> getProvidedIds() {
         if (provides == null) return null;
         return new ArrayList<>(provides);
     }
