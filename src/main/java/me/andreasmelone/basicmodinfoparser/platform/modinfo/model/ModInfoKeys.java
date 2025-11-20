@@ -80,29 +80,6 @@ public class ModInfoKeys {
         );
     }
 
-    /**
-     * Helper method to create a fabric-and-quilt-compliant {@link ModInfoKeys}
-     *
-     * @return a fabric-and-quilt-compliant {@link ModInfoKeys}
-     */
-    public static ModInfoKeys fabricKeys() {
-        return new ModInfoKeys(
-                "id",
-                "name",
-                "version",
-                "description",
-                "icon",
-                "authors",
-                new String[]{
-                        "depends",
-                        "recommends",
-                        "suggests",
-                        "breaks",
-                        "conflicts"
-                }
-        );
-    }
-
     @Override
     public boolean equals(Object other) {
         if (other == null) return false;
