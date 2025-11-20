@@ -41,16 +41,20 @@ public class FabricDependencyParser implements IDependencyParser<JsonAdapter, De
 
         // Extract all the keys from the found object
         for (Map.Entry<String, JsonElement> entry : dependencyObject.entrySet()) {
+            // A versionRange can be a string or an array of string
             final String dependencyId = entry.getKey();
-            final JsonObject versionRange = entry.getValue().getAsJsonObject();
-
-            // VersionRange can be a string or an array of strings
+            final JsonElement versionRange = entry.getValue();
 
             // Case 1: String
             if (versionRange.isJsonPrimitive() && versionRange.getAsJsonPrimitive().isString()) {
                 Optional<FabricVersionRange> range = FabricVersionRange.parse(versionRange.getAsString());
-                if (range.isPresent()) return Optional.of(
-                        new StandardDependency<>(dependencyId, required, range.get())
+
+                return range.map(fabricVersionRange ->
+                        new StandardDependency<>(
+                                dependencyId,
+                                required,
+                                fabricVersionRange
+                        )
                 );
             }
 
