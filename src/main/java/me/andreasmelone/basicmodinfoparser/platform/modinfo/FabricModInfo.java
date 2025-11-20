@@ -58,8 +58,7 @@ public class FabricModInfo extends StandardBasicModInfo implements ProvidesList<
     @Override
     public String toString() {
         return "FabricModInfo{" +
-                "breaks=" + breaks +
-                ", provides=" + provides +
+                "provides=" + provides +
                 '}';
     }
 
@@ -68,11 +67,11 @@ public class FabricModInfo extends StandardBasicModInfo implements ProvidesList<
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         FabricModInfo that = (FabricModInfo) o;
-        return Objects.equals(breaks, that.breaks) && Objects.equals(provides, that.provides);
+        return Objects.equals(provides, that.provides);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), breaks, provides);
+        return Objects.hash(super.hashCode(), provides);
     }
 }
