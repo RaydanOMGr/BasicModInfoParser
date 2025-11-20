@@ -38,9 +38,18 @@ import java.util.Objects;
 public class FabricModInfo extends StandardBasicModInfo implements ProvidesList<LooseSemanticVersion> {
     private final List<ProvidedMod> provides;
 
-    public FabricModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description, @Nullable List<Dependency> dependencies, @Nullable String iconPath, @NotNull Platform platform, @Nullable List<Dependency> breaks, @Nullable List<ProvidedMod<LooseSemanticVersion>> provides) {
-        super(id, name, version, description, dependencies, iconPath, platform);
-        this.breaks = breaks != null ? new ArrayList<>(breaks) : null;
+    public FabricModInfo(
+            @Nullable String id,
+            @Nullable String name,
+            @Nullable Version version,
+            @Nullable String description,
+            @Nullable List<Dependency> dependencies,
+            @Nullable String iconPath,
+            @NotNull Platform platform,
+            @NotNull List<String> authors,
+            @Nullable List<ProvidedMod> provides
+    ) {
+        super(id, name, version, description, dependencies, iconPath, platform, authors);
         this.provides = provides != null ? new ArrayList<>(provides) : null;
     }
 

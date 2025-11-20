@@ -42,15 +42,17 @@ public class StandardBasicModInfo implements BasicModInfo {
     private final List<Dependency> dependencies;
     private final String iconPath;
     private final Platform platform;
+    private final List<String> authors;
 
     public StandardBasicModInfo(
             @Nullable String id,
             @Nullable String name,
-            @Nullable Version<?> version,
+            @Nullable Version version,
             @Nullable String description,
             @Nullable List<Dependency> dependencies,
             @Nullable String iconPath,
-            @NotNull Platform platform
+            @NotNull Platform platform,
+            @Nullable List<String> authors
     ) {
         this.id = id;
         this.name = name;
@@ -59,6 +61,7 @@ public class StandardBasicModInfo implements BasicModInfo {
         this.dependencies = dependencies != null ? new ArrayList<>(dependencies) : null;
         this.iconPath = iconPath;
         this.platform = platform;
+        this.authors = authors;
     }
 
     /**
@@ -127,6 +130,10 @@ public class StandardBasicModInfo implements BasicModInfo {
         return platform;
     }
 
+    public List<String> getAuthors() {
+        return authors;
+    }
+
     @Override
     public String toString() {
         return "StandardBasicModInfo{" +
@@ -156,4 +163,5 @@ public class StandardBasicModInfo implements BasicModInfo {
     public static StandardBasicModInfo[] emptyArray() {
         return new StandardBasicModInfo[0];
     }
+
 }

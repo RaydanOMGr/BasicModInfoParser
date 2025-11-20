@@ -76,4 +76,9 @@ public interface BasicModInfo {
      * @return the platform that this mod is for
      */
     @NotNull Platform getPlatform();
+
+    /**
+     * @return the authors of the mod
+     */
+    @Nullable List<String> getAuthors();
 }
