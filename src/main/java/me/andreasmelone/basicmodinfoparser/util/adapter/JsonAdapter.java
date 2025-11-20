@@ -51,14 +51,16 @@ public class JsonAdapter extends DataAdapter<JsonObject, JsonArray> {
     @Override
     public Optional<String> getString(String key) {
         return getElement(key)
-                .filter(JsonElement::isJsonPrimitive)
+                .filter(element -> element.isJsonPrimitive()
+                        && element.getAsJsonPrimitive().isString())
                 .map(JsonElement::getAsString);
     }
 
     @Override
     public Optional<Boolean> getBoolean(String key) {
         return getElement(key)
-                .filter(JsonElement::isJsonPrimitive)
+                .filter(element -> element.isJsonPrimitive()
+                        && element.getAsJsonPrimitive().isBoolean())
                 .map(JsonElement::getAsBoolean);
     }
 
@@ -67,19 +69,6 @@ public class JsonAdapter extends DataAdapter<JsonObject, JsonArray> {
         return getElement(key)
                 .filter(JsonElement::isJsonArray)
                 .map(JsonElement::getAsJsonArray);
-    }
-
-    @Override
-    public <V> List<V> getList(String key, Function<DataAdapter<JsonObject, JsonArray>, V> mapper) {
-        List<V> list = new ArrayList<>();
-        getArray(key).ifPresent(array -> {
-            for (JsonElement element : array) {
-                if (element.isJsonObject()) {
-                    list.add(mapper.apply(new JsonAdapter(element.getAsJsonObject())));
-                }
-            }
-        });
-        return list;
     }
 
     @Override
