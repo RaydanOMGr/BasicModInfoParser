@@ -27,11 +27,11 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 
 import java.util.Objects;
 
-public class ProvidedMod<T extends Version<T>> {
+public class ProvidedMod {
     private final String id;
-    private final Version<T> version;
+    private final Version version;
 
-    public ProvidedMod(String id, Version<T> version) {
+    public ProvidedMod(String id, Version version) {
         this.id = id;
         this.version = version;
     }
@@ -40,7 +40,7 @@ public class ProvidedMod<T extends Version<T>> {
         return id;
     }
 
-    public Version<T> getVersion() {
+    public Version getVersion() {
         return version;
     }
 
@@ -55,7 +55,7 @@ public class ProvidedMod<T extends Version<T>> {
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        ProvidedMod<?> that = (ProvidedMod<?>) o;
+        ProvidedMod that = (ProvidedMod) o;
         return Objects.equals(id, that.id) && Objects.equals(version, that.version);
     }
 

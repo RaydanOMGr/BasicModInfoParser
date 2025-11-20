@@ -50,7 +50,7 @@ public interface BasicModInfo {
      *
      * @return the version of the mod
      */
-    @Nullable Version<?> getVersion();
+    @Nullable Version getVersion();
 
     /**
      * The mods description

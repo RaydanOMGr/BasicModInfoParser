@@ -28,12 +28,12 @@ import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 
 import java.util.List;
 
-public interface ProvidesList<T extends Version<T>> {
+public interface ProvidesList<T extends Version> {
     /**
      * @return the provided mod IDs
      * @see ProvidedMod
      */
-    List<ProvidedMod<T>> getProvidedIds();
+    List<ProvidedMod> getProvidedIds();
 
     /**
      * @return the type of the provided {@link Version} objects
