@@ -37,7 +37,7 @@ import java.util.Objects;
 public class StandardBasicModInfo implements BasicModInfo {
     private final String id;
     private final String name;
-    private final Version<?> version;
+    private final Version version;
     private final String description;
     private final List<Dependency> dependencies;
     private final String iconPath;
@@ -90,7 +90,7 @@ public class StandardBasicModInfo implements BasicModInfo {
      */
     @Override
     @Nullable
-    public Version<?> getVersion() {
+    public Version getVersion() {
         return version;
     }
 

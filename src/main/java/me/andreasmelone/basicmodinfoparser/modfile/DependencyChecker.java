@@ -56,7 +56,7 @@ public class DependencyChecker {
             javaInfo = new StandardBasicModInfo(
                     "java",
                     "Java",
-                    LooseSemanticVersion.parse(javaVersion).orElse(null),
+                    new LooseSemanticVersion().parse(javaVersion).orElse(null),
                     "Java",
                     new ArrayList<>(),
                     null,
@@ -67,7 +67,7 @@ public class DependencyChecker {
         BasicModInfo gameInfo = new StandardBasicModInfo(
                 "minecraft",
                 "Minecraft",
-                (isFabricBased ? LooseSemanticVersion.parse(gameVersion) : MavenVersion.parse(gameVersion)).orElse(null),
+                (isFabricBased ? new LooseSemanticVersion().parse(gameVersion) : new MavenVersion().parse(gameVersion)).orElse(null),
                 "Minecraft",
                 new ArrayList<>(),
                 null,
