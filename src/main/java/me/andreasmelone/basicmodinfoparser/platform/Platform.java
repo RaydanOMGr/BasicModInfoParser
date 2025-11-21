@@ -29,18 +29,27 @@ import com.google.gson.JsonObject;
 import me.andreasmelone.abstractzip.IZipEntry;
 import me.andreasmelone.abstractzip.IZipFile;
 import me.andreasmelone.abstractzip.IZipFileFactory;
-import me.andreasmelone.basicmodinfoparser.platform.dependency.Dependency;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.ProvidedMod;
-import me.andreasmelone.basicmodinfoparser.platform.dependency.StandardDependency;
-import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.FabricVersionRange;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.fabric.LooseSemanticVersion;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.forge.MavenVersion;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.parser.FabricDependencyParser;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.parser.ForgeDependencyParser;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.parser.LegacyForgeDependencyParser;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.parser.QuiltDependencyParser;
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.FabricModInfo;
 import me.andreasmelone.basicmodinfoparser.platform.modinfo.StandardBasicModInfo;
+import me.andreasmelone.basicmodinfoparser.platform.modinfo.model.ModInfoKeys;
 import me.andreasmelone.basicmodinfoparser.util.ModInfoParseException;
 import me.andreasmelone.basicmodinfoparser.util.ParserUtils;
+import me.andreasmelone.basicmodinfoparser.util.adapter.JsonAdapter;
+import me.andreasmelone.basicmodinfoparser.util.adapter.TomlAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.tomlj.Toml;
+import org.tomlj.TomlArray;
+import org.tomlj.TomlParseResult;
+import org.tomlj.TomlTable;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,39 +58,47 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
-import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.*;
+import static me.andreasmelone.basicmodinfoparser.platform.modinfo.model.ModInfoKeys.forgeKeys;
+import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.GSON;
+import static me.andreasmelone.basicmodinfoparser.util.ParserUtils.readEverythingAsString;
 
 public enum Platform {
     /**
      * Legacy Forge platform, which uses the {@code mcmod.info} file containing JSON data.
      */
-    FORGE_LEGACY("mcmod.info") {
+    FORGE_LEGACY(
+            new ModInfoKeys(
+                    "modid",
+                    "name",
+                    "version",
+                    "description",
+                    "logoFile",
+                    "authorList",
+                    new String[]{"dependencies"}
+            ),
+            "mcmod.info"
+    ) {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
+            // In Legacy Forge, you can specify multiple mods per file (the root element is an array)
             JsonArray topArray = GSON.fromJson(fileData, JsonArray.class);
+
             if (topArray == null || topArray.size() == 0) {
                 return StandardBasicModInfo.emptyArray();
             }
 
+            // Since the mod list is not empty, we iterate over all mods and parse each one
             List<BasicModInfo> parsedInfos = new ArrayList<>();
             for (JsonElement topArrayElement : topArray) {
                 if (!topArrayElement.isJsonObject()) continue;
+
                 JsonObject modObject = topArrayElement.getAsJsonObject();
-                List<Dependency> dependencyList = new ArrayList<>();
-                if (modObject.has("dependencies") && modObject.get("dependencies").isJsonArray()) {
-                    JsonArray dependenciesArray = modObject.getAsJsonArray("dependencies");
-                    for (JsonElement element : dependenciesArray) {
-                        if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
-                            continue;
-                        }
-                        parseLegacyForgeDependency(element.getAsString()).ifPresent(dependencyList::add);
-                    }
-                }
-                parsedInfos.add(ParserUtils.createForgeModInfoFromJsonObject(modObject,
-                        "modid", "name", "version", "description", "logoFile",
-                        dependencyList, this
+                parsedInfos.add(ParserUtils.createModInfoFrom(
+                        new JsonAdapter(modObject),
+                        this,
+                        new LegacyForgeDependencyParser(),
+                        new MavenVersion()
                 ));
             }
 
@@ -96,15 +113,37 @@ public enum Platform {
     /**
      * Forge platform, which uses the {@code mods.toml} file with TOML data.
      */
-    FORGE("META-INF/mods.toml") {
+    FORGE(forgeKeys(), "META-INF/mods.toml") {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
-            return ParserUtils.parseForgelikeInfo(fileData, this);
+            final TomlParseResult parseResult = Toml.parse(fileData);
+
+            final TomlArray mods = parseResult.getArray("mods");
+            if (mods == null) return StandardBasicModInfo.emptyArray();
+
+            final List<BasicModInfo> modInfos = new ArrayList<>();
+            // I transferred Forge-specific logic to the Platform Enumeration
+            // (the capacity to provide multiple mods per file)
+            for (int i = 0; i < mods.size(); i++) {
+                final TomlTable modInfo = mods.getTable(i);
+                if (modInfo.isEmpty()) continue;
+
+                final BasicModInfo info = ParserUtils.createModInfoFrom(
+                        new TomlAdapter(modInfo),
+                        this,
+                        new ForgeDependencyParser(),
+                        new MavenVersion()
+                );
+
+                modInfos.add(info);
+            }
+
+            return modInfos.toArray(new BasicModInfo[0]);
         }
 
         @Override
         protected BasicModInfo createNullableLoaderInfo(String loaderVersion) {
-            Optional<MavenVersion> version = MavenVersion.parse(loaderVersion);
+            Optional<Version> version = new MavenVersion().parse(loaderVersion);
             return new StandardBasicModInfo(
                     "forge",
                     "Forge",
@@ -112,22 +151,31 @@ public enum Platform {
                     "Modifications to the Minecraft base files to assist in compatibility between mods.",
                     new ArrayList<>(),
                     null,
-                    this
+                    this,
+                    new ArrayList<>()
             );
         }
     },
     /**
      * NeoForge platform, which uses the {@code neoforge.mods.toml} file with TOML data, similarly to {@link Platform#FORGE}.
      */
-    NEOFORGE("META-INF/neoforge.mods.toml") {
+    NEOFORGE(forgeKeys(), "META-INF/neoforge.mods.toml") {
         @Override
         protected @NotNull BasicModInfo[] parseFileData(String fileData) {
-            return ParserUtils.parseForgelikeInfo(fileData, this);
+            final TomlTable modsTable = Toml.parse(fileData).getTable("mods");
+            final BasicModInfo info = ParserUtils.createModInfoFrom(
+                    new TomlAdapter(modsTable),
+                    this,
+                    new ForgeDependencyParser(),
+                    new MavenVersion()
+            );
+
+            return new BasicModInfo[]{info};
         }
 
         @Override
         protected @NotNull BasicModInfo createNullableLoaderInfo(String loaderVersion) {
-            Optional<MavenVersion> version = MavenVersion.parse(loaderVersion);
+            Optional<Version> version = new MavenVersion().parse(loaderVersion);
             return new StandardBasicModInfo(
                     "neoforge",
                     "NeoForge",
@@ -135,48 +183,84 @@ public enum Platform {
                     "NeoForge is a free, open-source, community-oriented modding API for Minecraft.",
                     new ArrayList<>(),
                     null,
-                    this
+                    this,
+                    new ArrayList<>()
             );
         }
     },
+
     /**
      * Fabric platform, which uses the {@code fabric.mod.json} file. As the extension suggests, it stores data in JSON format.
      */
-    FABRIC("fabric.mod.json") {
+    FABRIC(
+            new ModInfoKeys(
+                    "id",
+                    "name",
+                    "version",
+                    "description",
+                    "icon",
+                    "authors",
+                    new String[]{
+                            "depends",
+                            "recommends",
+                            "suggests",
+                            "breaks",
+                            "conflicts"
+                    }
+            ),
+            "fabric.mod.json"
+    ) {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             JsonElement root = GSON.fromJson(fileData, JsonElement.class);
             if (root == null || (!root.isJsonArray() && !root.isJsonObject())) {
                 return StandardBasicModInfo.emptyArray();
             }
+
+            // Fabric 0.4.0 or older allowed the root object to be an array
+            // (https://wiki.fabricmc.net/documentation:fabric_mod_json_spec#fabricmodjson_specification)
             JsonArray jsonArray = root.isJsonArray() ? root.getAsJsonArray() : new JsonArray();
+            // Treat everything as a Json Array so we can iterate over it (Even if there's only one element)
             if (root.isJsonObject()) {
                 jsonArray.add(root.getAsJsonObject());
             }
 
+            // Now that we have the mod list, we iterate over all mods and parse each one
             List<BasicModInfo> parsedInfos = new ArrayList<>();
             for (JsonElement jsonArrayElement : jsonArray) {
                 if (!jsonArrayElement.isJsonObject()) continue;
-                JsonObject jsonObject = jsonArrayElement.getAsJsonObject();
+                final JsonObject modObject = jsonArrayElement.getAsJsonObject();
 
-                Optional<LooseSemanticVersion> version = LooseSemanticVersion.parse(getValidString(jsonObject, "version"));
+                final BasicModInfo current = ParserUtils.createModInfoFrom(
+                        new JsonAdapter(modObject),
+                        this,
+                        new FabricDependencyParser(),
+                        new LooseSemanticVersion()
+                );
 
-                List<Dependency> dependencyList = new ArrayList<>();
-                ParserUtils.parseFabricDependencies(dependencyList, jsonObject, "depends", true);
-                ParserUtils.parseFabricDependencies(dependencyList, jsonObject, "recommends", false);
-                List<Dependency> breaksList = new ArrayList<>();
-                ParserUtils.parseFabricDependencies(breaksList, jsonObject, "breaks", true);
-                List<ProvidedMod<LooseSemanticVersion>> provided = new ArrayList<>();
-                if (jsonObject.has("provides") && jsonObject.get("provides").isJsonArray()) {
-                    for (JsonElement dependency : jsonObject.getAsJsonArray("provides")) {
+                List<ProvidedMod> providedMods = new ArrayList<>();
+                if (modObject.has("provides") && modObject.get("provides").isJsonArray()) {
+                    for (JsonElement dependency : modObject.getAsJsonArray("provides")) {
                         if (!dependency.isJsonPrimitive() || !dependency.getAsJsonPrimitive().isString()) continue;
-                        provided.add(new ProvidedMod<>(dependency.getAsString(), version.orElse(null)));
+                        providedMods.add(new ProvidedMod(dependency.getAsString(), current.getVersion()));
                     }
                 }
 
-                parsedInfos.add(ParserUtils.createFabricModInfoFromJsonObject(jsonObject,
-                        "id", "name", version.orElse(null), "description", "icon",
-                        dependencyList, breaksList, provided, this));
+                // Create a FabricModInfo with the above parsed information
+                // and add it to the list of parsed infos
+                parsedInfos.add(
+                        new FabricModInfo(
+                                current.getId(),
+                                current.getName(),
+                                current.getVersion(),
+                                current.getDescription(),
+                                current.getDependencies(),
+                                current.getIconPath(),
+                                current.getPlatform(),
+                                current.getAuthors(),
+                                providedMods
+                        )
+                );
             }
 
             return parsedInfos.toArray(new BasicModInfo[0]);
@@ -184,7 +268,7 @@ public enum Platform {
 
         @Override
         protected @NotNull BasicModInfo createNullableLoaderInfo(String loaderVersion) {
-            Optional<LooseSemanticVersion> version = LooseSemanticVersion.parse(loaderVersion);
+            Optional<Version> version = new LooseSemanticVersion().parse(loaderVersion);
             return new StandardBasicModInfo(
                     "fabricloader",
                     "Fabric Loader",
@@ -192,14 +276,29 @@ public enum Platform {
                     "A flexible platform-independent mod loader designed for Minecraft and other games and applications.",
                     new ArrayList<>(),
                     null,
-                    this
+                    this,
+                    new ArrayList<>()
             );
         }
     },
+
     /**
      * Quilt platform, which uses the {@code quilt.mod.json} file. As the extensions suggests, it stores data in the JSON format.
      */
-    QUILT("quilt.mod.json") {
+    QUILT(
+            new ModInfoKeys(
+                    "id",
+                    "metadata.name",
+                    "version",
+                    "metadata.description",
+                    "metadata.icon",
+                    "metadata.contributors",
+                    new String[]{
+                            "depends", "breaks"
+                    }
+            ),
+            "quilt.mod.json"
+    ) {
         @Override
         protected BasicModInfo[] parseFileData(String fileData) {
             JsonObject jsonObj = GSON.fromJson(fileData, JsonObject.class);
@@ -207,110 +306,48 @@ public enum Platform {
 
             if (!jsonObj.has("quilt_loader") || !jsonObj.get("quilt_loader").isJsonObject())
                 return StandardBasicModInfo.emptyArray();
-            JsonObject quiltLoader = jsonObj.getAsJsonObject("quilt_loader");
-            String modId = getValidString(quiltLoader, "id");
-            String version = getValidString(quiltLoader, "version");
 
-            String name = null;
-            String description = null;
-            String iconPath = null;
-            if (quiltLoader.has("metadata") && quiltLoader.get("metadata").isJsonObject()) {
-                JsonObject metadata = quiltLoader.getAsJsonObject("metadata");
-                name = getValidString(metadata, "name");
-                description = getValidString(metadata, "description");
-                iconPath = getValidString(metadata, "icon");
-            }
+            // Get the main quilt loader object
+            JsonAdapter quiltLoader = new JsonAdapter(
+                    jsonObj.getAsJsonObject("quilt_loader")
+            );
 
-            List<Dependency> dependencies = new ArrayList<>();
-            if (quiltLoader.has("depends") && quiltLoader.get("depends").isJsonArray()) {
-                for (JsonElement dependency : quiltLoader.getAsJsonArray("depends")) {
-                    if (!dependency.isJsonObject()) continue;
-                    JsonObject dependencyObject = dependency.getAsJsonObject();
-                    String dependencyId = getValidString(dependencyObject, "id");
-                    boolean isMandatory = true;
-                    if (dependencyObject.has("optional")
-                            && dependencyObject.get("optional").isJsonPrimitive()
-                            && dependencyObject.get("optional").getAsJsonPrimitive().isString()) {
-                        isMandatory = !dependencyObject.get("optional").getAsBoolean();
-                    }
-                    String[] versions = new String[]{"*"};
+            // NOTE: The "provides" logic had no effect ultimately. The provides list was being updated, but was not
+            // being used anywhere else. Should we make it a property inside BasicModInfo so it's usable?
 
-                    if (dependencyObject.has("versions")) {
-                        JsonElement dependencyVersion = dependencyObject.get("versions");
-                        if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
-                            versions[0] = dependencyVersion.getAsString();
-                        } else if (dependencyVersion.isJsonArray()) {
-                            versions = StreamSupport.stream(dependencyVersion.getAsJsonArray().spliterator(), false)
-                                    .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
-                                    .map(JsonElement::getAsString)
-                                    .toArray(String[]::new);
-                        }
-                    }
+            //  List<ProvidedMod<LooseSemanticVersion>> provides = new ArrayList<>();
+            //  if (quiltLoader.has("provides") && quiltLoader.get("provides").isJsonArray()) {
+            //      for (JsonElement dependency : quiltLoader.getAsJsonArray("provides")) {
+            //          if (!dependency.isJsonObject()) continue;
+            //          JsonObject dependencyObject = dependency.getAsJsonObject();
+            //          String dependencyId = getValidString(dependencyObject, "id");
+            //          String providedVersion = version;
+            //
+            //          if (dependencyObject.has("versions")) {
+            //              JsonElement dependencyVersion = dependencyObject.get("versions");
+            //              if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
+            //                  providedVersion = dependencyVersion.getAsString();
+            //              }
+            //          }
+            //
+            //          Optional<LooseSemanticVersion> semVer = LooseSemanticVersion.parse(providedVersion);
+            //          provides.add(new ProvidedMod<>(dependencyId, semVer.orElse(null)));
+            //      }
+            //  }
 
-                    Optional<FabricVersionRange> fabricVersionRange = FabricVersionRange.parse(versions);
-                    dependencies.add(new StandardDependency<>(dependencyId, isMandatory, fabricVersionRange.orElse(null)));
-                }
-            }
-
-            List<Dependency> breaks = new ArrayList<>();
-            if (quiltLoader.has("breaks") && quiltLoader.get("breaks").isJsonArray()) {
-                for (JsonElement dependency : quiltLoader.getAsJsonArray("breaks")) {
-                    if (!dependency.isJsonObject()) continue;
-                    JsonObject dependencyObject = dependency.getAsJsonObject();
-                    String dependencyId = getValidString(dependencyObject, "id");
-                    boolean isMandatory = true;
-                    String[] versions = new String[]{"*"};
-
-                    if (dependencyObject.has("versions")) {
-                        JsonElement dependencyVersion = dependencyObject.get("versions");
-                        if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
-                            versions[0] = dependencyVersion.getAsString();
-                        } else if (dependencyVersion.isJsonArray()) {
-                            versions = StreamSupport.stream(dependencyVersion.getAsJsonArray().spliterator(), false)
-                                    .filter((el) -> el.isJsonPrimitive() && el.getAsJsonPrimitive().isString())
-                                    .map(JsonElement::getAsString)
-                                    .toArray(String[]::new);
-                        }
-                    }
-
-                    Optional<FabricVersionRange> fabricVersionRange = FabricVersionRange.parse(versions);
-                    breaks.add(new StandardDependency<>(dependencyId, isMandatory, fabricVersionRange.orElse(null)));
-                }
-            }
-
-            List<ProvidedMod<LooseSemanticVersion>> provides = new ArrayList<>();
-            if (quiltLoader.has("provides") && quiltLoader.get("provides").isJsonArray()) {
-                for (JsonElement dependency : quiltLoader.getAsJsonArray("provides")) {
-                    if (!dependency.isJsonObject()) continue;
-                    JsonObject dependencyObject = dependency.getAsJsonObject();
-                    String dependencyId = getValidString(dependencyObject, "id");
-                    String providedVersion = version;
-
-                    if (dependencyObject.has("versions")) {
-                        JsonElement dependencyVersion = dependencyObject.get("versions");
-                        if (dependencyVersion.isJsonPrimitive() && dependencyVersion.getAsJsonPrimitive().isString()) {
-                            providedVersion = dependencyVersion.getAsString();
-                        }
-                    }
-
-                    Optional<LooseSemanticVersion> semVer = LooseSemanticVersion.parse(providedVersion);
-                    provides.add(new ProvidedMod<>(dependencyId, semVer.orElse(null)));
-                }
-            }
-
-            Optional<LooseSemanticVersion> semanticVersion = LooseSemanticVersion.parse(version, false);
             return new BasicModInfo[]{
-                    new FabricModInfo(modId, name,
-                            semanticVersion.orElse(null),
-                            description, dependencies, iconPath, this,
-                            breaks, provides
+                    ParserUtils.createModInfoFrom(
+                            quiltLoader,
+                            this,
+                            new QuiltDependencyParser(),
+                            new LooseSemanticVersion()
                     )
             };
         }
 
         @Override
         protected @NotNull BasicModInfo createNullableLoaderInfo(String loaderVersion) {
-            Optional<LooseSemanticVersion> version = LooseSemanticVersion.parse(loaderVersion);
+            Optional<Version> version = new LooseSemanticVersion().parse(loaderVersion);
             return new StandardBasicModInfo(
                     "quilt_loader",
                     "Quilt Loader",
@@ -318,14 +355,18 @@ public enum Platform {
                     "The loader for mods under Quilt. It provides mod loading facilities and useful abstractions for other mods to use.",
                     new ArrayList<>(),
                     null,
-                    this
+                    this,
+                    new ArrayList<>()
             );
         }
     };
 
+    protected final ModInfoKeys modInfoKeys;
+
     private final String[] infoFilePaths;
 
-    private Platform(String... infoFilePaths) {
+    Platform(ModInfoKeys modInfoKeys, String... infoFilePaths) {
+        this.modInfoKeys = modInfoKeys;
         this.infoFilePaths = infoFilePaths;
     }
 
@@ -370,7 +411,7 @@ public enum Platform {
             IZipEntry infoFileEntry = zip.findEntry(infoFilePath);
             if (infoFileEntry == null) continue;
             try (InputStream entry = zip.openEntry(infoFileEntry)) {
-                if(entry == null) return Optional.empty();
+                if (entry == null) return Optional.empty();
                 return Optional.of(readEverythingAsString(entry));
             }
         }
@@ -445,5 +486,9 @@ public enum Platform {
             }
         }
         return platforms.toArray(new Platform[0]);
+    }
+
+    public ModInfoKeys getModInfoKeys() {
+        return modInfoKeys;
     }
 }

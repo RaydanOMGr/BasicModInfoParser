@@ -23,7 +23,7 @@
  */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.version;
 
-public interface VersionRange<T extends Version<T>> {
+public interface VersionRange<T extends Version> {
     /**
      * @return the string representation of the version range
      */

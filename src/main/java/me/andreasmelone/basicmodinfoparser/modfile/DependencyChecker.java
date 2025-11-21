@@ -54,15 +54,25 @@ public class DependencyChecker {
         boolean isFabricBased = loaderInfo.getPlatform() == Platform.FABRIC || loaderInfo.getPlatform() == Platform.QUILT;
         if (isFabricBased) {
             javaInfo = new StandardBasicModInfo(
-                    "java", "Java",
-                    LooseSemanticVersion.parse(javaVersion).orElse(null),
-                    "Java", new ArrayList<>(), null, Platform.FABRIC
+                    "java",
+                    "Java",
+                    new LooseSemanticVersion().parse(javaVersion).orElse(null),
+                    "Java",
+                    new ArrayList<>(),
+                    null,
+                    Platform.FABRIC,
+                    null
             );
         }
         BasicModInfo gameInfo = new StandardBasicModInfo(
-                "minecraft", "Minecraft",
-                (isFabricBased ? LooseSemanticVersion.parse(gameVersion) : MavenVersion.parse(gameVersion)).orElse(null),
-                "Minecraft", new ArrayList<>(), null, loaderInfo.getPlatform()
+                "minecraft",
+                "Minecraft",
+                (isFabricBased ? new LooseSemanticVersion().parse(gameVersion) : new MavenVersion().parse(gameVersion)).orElse(null),
+                "Minecraft",
+                new ArrayList<>(),
+                null,
+                loaderInfo.getPlatform(),
+                null
         );
 
         Map<Dependency, PresenceStatus> dependencyMap = new HashMap<>();

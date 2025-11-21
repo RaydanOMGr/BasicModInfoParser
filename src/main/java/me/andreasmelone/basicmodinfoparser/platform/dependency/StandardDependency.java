@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class StandardDependency<T extends Version<T>> implements Dependency {
+public class StandardDependency<T extends Version> implements Dependency {
     protected final String id;
     protected final boolean mandatory;
     protected final VersionRange<T> range;
@@ -64,10 +64,10 @@ public class StandardDependency<T extends Version<T>> implements Dependency {
             if (mod instanceof ProvidesList) {
                 ProvidesList<?> providesList = (ProvidesList<?>) mod;
                 if (this.range == null || providesList.getType().isAssignableFrom(range.getType())) {
-                    List<ProvidedMod<T>> innerMods = new ArrayList<>(Optional.ofNullable(((ProvidesList<T>) providesList).getProvidedIds())
+                    List<ProvidedMod> innerMods = new ArrayList<>(Optional.ofNullable(((ProvidesList<T>) providesList).getProvidedIds())
                             .orElse(Collections.emptyList()));
 
-                    for (ProvidedMod<T> innerMod : innerMods) {
+                    for (ProvidedMod innerMod : innerMods) {
                         if (innerMod.getId() == null || !innerMod.getId().equalsIgnoreCase(this.getModId())) continue;
 
                         if (innerMod.getVersion() == null || this.range == null || !range.getType().isInstance(mod.getVersion())) {

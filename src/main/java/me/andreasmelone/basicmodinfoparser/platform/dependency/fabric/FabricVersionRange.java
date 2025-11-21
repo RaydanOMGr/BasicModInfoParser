@@ -23,6 +23,7 @@
  */
 package me.andreasmelone.basicmodinfoparser.platform.dependency.fabric;
 
+import me.andreasmelone.basicmodinfoparser.platform.dependency.version.Version;
 import me.andreasmelone.basicmodinfoparser.platform.dependency.version.VersionRange;
 
 import java.util.*;
@@ -106,11 +107,11 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
 
                     if (operators == null || versionString == null || versionString.isEmpty()) continue;
                 }
-                Optional<LooseSemanticVersion> parsedVersion = LooseSemanticVersion.parse(versionString, true);
+                Optional<Version> parsedVersion = new LooseSemanticVersion().parse(versionString, true);
                 if (!parsedVersion.isPresent()) continue;
                 if (operators.isEmpty()) operators.add(Operator.EQUALS);
 
-                versionConditions.add(new VersionCondition(operators, parsedVersion.get()));
+                versionConditions.add(new VersionCondition(operators, (LooseSemanticVersion) parsedVersion.get()));
             }
 
             allConditions.add(versionConditions);
@@ -167,7 +168,8 @@ public class FabricVersionRange implements VersionRange<LooseSemanticVersion> {
                     return true;
                 }
 
-                if (operator == Operator.CARET || (operator == Operator.TILDE && this.version.getWildcardPositions().contains(1))) {
+                if (operator == Operator.CARET || (operator == Operator.TILDE && this.version.getWildcardPositions()
+                        .contains(1))) {
                     boolean isAboveLower = this.version.compareTo(version) <= 0;
 
                     LooseSemanticVersion upperBound = this.version.increaseMajor(1);

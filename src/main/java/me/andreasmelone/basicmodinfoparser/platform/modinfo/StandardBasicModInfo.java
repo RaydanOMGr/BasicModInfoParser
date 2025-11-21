@@ -37,14 +37,23 @@ import java.util.Objects;
 public class StandardBasicModInfo implements BasicModInfo {
     private final String id;
     private final String name;
-    private final Version<?> version;
+    private final Version version;
     private final String description;
     private final List<Dependency> dependencies;
     private final String iconPath;
     private final Platform platform;
+    private final List<String> authors;
 
-    public StandardBasicModInfo(@Nullable String id, @Nullable String name, @Nullable Version<?> version, @Nullable String description,
-                                @Nullable List<Dependency> dependencies, @Nullable String iconPath, @NotNull Platform platform) {
+    public StandardBasicModInfo(
+            @Nullable String id,
+            @Nullable String name,
+            @Nullable Version version,
+            @Nullable String description,
+            @Nullable List<Dependency> dependencies,
+            @Nullable String iconPath,
+            @NotNull Platform platform,
+            @Nullable List<String> authors
+    ) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -52,6 +61,7 @@ public class StandardBasicModInfo implements BasicModInfo {
         this.dependencies = dependencies != null ? new ArrayList<>(dependencies) : null;
         this.iconPath = iconPath;
         this.platform = platform;
+        this.authors = authors;
     }
 
     /**
@@ -83,7 +93,7 @@ public class StandardBasicModInfo implements BasicModInfo {
      */
     @Override
     @Nullable
-    public Version<?> getVersion() {
+    public Version getVersion() {
         return version;
     }
 
@@ -120,6 +130,10 @@ public class StandardBasicModInfo implements BasicModInfo {
         return platform;
     }
 
+    public List<String> getAuthors() {
+        return authors;
+    }
+
     @Override
     public String toString() {
         return "StandardBasicModInfo{" +
@@ -149,4 +163,5 @@ public class StandardBasicModInfo implements BasicModInfo {
     public static StandardBasicModInfo[] emptyArray() {
         return new StandardBasicModInfo[0];
     }
+
 }
